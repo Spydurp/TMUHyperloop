@@ -3,3 +3,5 @@ Code repository for TMU Hyperloop GNC systems
 
 Contributors:
 Andy Lin
+Alex Meng
+
