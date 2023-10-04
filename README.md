@@ -6,3 +6,7 @@ Contributors:
 - Matthew Trieu
 - Alex Meng
 
+## Dependencies
+
+### Libraries
+PyQt
