@@ -6,6 +6,7 @@ Contributors:
 - Matthew Trieu
 - Alex Meng
 - Brian Xu
+- Leo Lin
 
 ## Dependencies
 
