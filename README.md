@@ -5,6 +5,7 @@ Contributors:
 - Andy Lin
 - Matthew Trieu
 - Alex Meng
+- Brian Xu
 
 ## Dependencies
 
