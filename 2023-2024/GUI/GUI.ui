@@ -24,6 +24,33 @@
      </rect>
     </property>
    </widget>
+
+
+   <widget class="QPushButton" name="stopButton">
+    <property name="geometry">
+        <rect>
+            <x>560</x>
+            <y>300</y>
+            <width>100</width>
+            <height>40</height>
+        </rect>   
+    </property>
+    <property name="text">
+        <string>STOP</string>
+    </property>
+    <property name="styleSheet">
+        <string>
+            QPushButton {
+                background-color: red;
+                color: white;
+                font-size: 15px;
+                font-weight: bold;
+            }
+        </string>
+    </property>
+   </widget>
+
+
    <widget class="QLabel" name="label">
     <property name="geometry">
      <rect>
