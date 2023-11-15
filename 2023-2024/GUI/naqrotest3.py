@@ -7,7 +7,7 @@ class HyperloopControlGUI(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("Joever")
+        self.setWindowTitle("Naqro Baby Moment")
         self.setGeometry(100, 100, 400, 400)
 
         central_widget = QWidget()
@@ -23,22 +23,14 @@ class HyperloopControlGUI(QMainWindow):
         current_layout = QHBoxLayout()
         commandwindow_layout = QVBoxLayout()
 
-        style = "QPushButton { background-color: #1E8939; color: white; }"
+        style = "QPushButton { background-color: #007acc; color: white; }"
         self.start_button = QPushButton("Start")
         self.start_button.setStyleSheet(style)
-        style = "QPushButton { background-color: #E11313; color: white; }"
+        style = "QPushButton { background-color: #ff4b4b; color: white; }"
         self.stop_button = QPushButton("Stop")
         self.stop_button.setStyleSheet(style)
 
-        self.image_label = QLabel()
-        image_path = "Hyperloop_logo_W.png"
-        pixmap = QPixmap(image_path)
-        self.image_label.setPixmap(pixmap)
-        self.image_label.setAlignment(Qt.AlignCenter)
-
-
         button_layout.addWidget(self.start_button)
-        button_layout.addWidget(self.image_label)
         button_layout.addWidget(self.stop_button)
 
         # Displays for voltage and current
@@ -74,10 +66,15 @@ class HyperloopControlGUI(QMainWindow):
         self.voltage_slider.setTickInterval(10)
         self.voltage_slider.valueChanged.connect(self.update_voltage_display)
 
+        self.image_label = QLabel()
+        image_path = "MikuHat.jpg"
+        pixmap = QPixmap(image_path)
+        self.image_label.setPixmap(pixmap)
+        self.image_label.setAlignment(Qt.AlignCenter)
 
         # Console Command Button and Window
         self.command = QLabel("Command Block:")
-        style = "QPushButton { background-color: #004c9b; color: yellow; }"
+        style = "QPushButton { background-color: #ff0000; color: white; }"
         self.command_button = QPushButton("Enter")
         self.command_button.setStyleSheet(style)
         commandwindow_layout.addWidget(self.command)
@@ -108,27 +105,19 @@ class HyperloopControlGUI(QMainWindow):
 
     def update_voltage_display(self):
         voltage = self.voltage_slider.value()
+        self.voltage_display.setText(f"Voltage: {voltage} V")
 
     def start_train(self):
         # Implement code to start the train or perform relevant actions
         voltage = self.voltage_slider.value()
-        self.voltage_display.setText(f"Voltage: JOEVER V")
+        self.voltage_display.setText(f"Voltage: {voltage} V")
         self.current_display.setText("Current: JOEVER A")
-        self.voltage_display2.setText(f"Voltage: JOEVER V")
-        self.current_display2.setText("Current: JOEVER A")
-        self.voltage_display3.setText(f"Voltage: JOEVER V")
-        self.current_display3.setText("Current: JOEVER A")
-
 
     def stop_train(self):
         # Implement code to stop the train or perform relevant actions
         voltage = self.voltage_slider.value()
         self.voltage_display.setText(f"Voltage: {voltage} V")
         self.current_display.setText("Current: 0 A")
-        self.voltage_display2.setText(f"Voltage: {voltage} V")
-        self.current_display2.setText("Current: 0 A")
-        self.voltage_display3.setText(f"Voltage: {voltage} V")
-        self.current_display3.setText("Current: 0 A")
 
     def user_input(self):
         # Implement code to print user input in command block
