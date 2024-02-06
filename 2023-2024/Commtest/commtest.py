@@ -1,21 +1,18 @@
-import socket                
+# echo-server.py
 
-s = socket.socket()          
-print ("Socket successfully created")
+import socket
 
-port = 12345                
+HOST = "172.20.10.3"  # Standard loopback interface address (localhost)
+PORT = 65431  # Port to listen on (non-privileged ports are > 1023)
 
-s.bind(('172.20.10.3', port))         
-print ("socket binded to %s" %(port))
-
-s.listen(5)      
-print ("socket is listening")            
-
-while True: 
-
-   c, addr = s.accept()      
-   print ('Got connection from', addr )
-
-   c.send(b'Thank you for connecting') 
-
-   c.close() 
+with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+    s.bind((HOST, PORT))
+    s.listen()
+    conn, addr = s.accept()
+    with conn:
+        print(f"Connected by {addr}")
+        while True:
+            data = conn.recv(1024)
+            if not data:
+                break
+            conn.sendall(data)
