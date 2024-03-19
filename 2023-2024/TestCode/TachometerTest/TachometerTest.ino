@@ -7,6 +7,7 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  Serial.println(analogRead(0));
+  Serial.println(digitalRead(9));
   delay(100);
 }
+
