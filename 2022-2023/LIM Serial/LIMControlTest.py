@@ -24,8 +24,6 @@ while(not keyboard.is_pressed("`")):
         ser.write(b'!DC 1 50000_')
         print(ser.read(13))
     # Send a command to set the motor speed to the maximum value
-    
-    
 
 # Close the serial port
 ser.close()
