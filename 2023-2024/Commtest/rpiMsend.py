@@ -19,6 +19,8 @@ while True:
             while True:
                 if ser.in_waiting > 0:
                     message = ser.readline()
+                # Insert rest of arduino recieves here
+                
                 s.sendall(message)
                 data = s.recv(1024)
                 print(f"Received {data!r}")

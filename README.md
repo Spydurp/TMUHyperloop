@@ -11,4 +11,13 @@ Contributors:
 ## Dependencies
 
 ### Libraries
-PyQt
+Python:
+    PyQt
+    PySide6
+    serial
+    sys
+    socket
+    time
+Arduino:
+    Timer.h
+    AM2302-Sensor.h
