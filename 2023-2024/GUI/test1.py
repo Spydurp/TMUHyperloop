@@ -1,8 +1,36 @@
 import sys
+import serial.tools.list_ports
 from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QLabel, QVBoxLayout, QHBoxLayout, QWidget, QSlider, QPlainTextEdit, QTextEdit
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
+#include <AM2302-Sensor.h>
+rts = serial.tools.list_ports.comports()
+serialInst = serial.Serial()
 
+ports = serial.tools.list_ports.comports()
+serialInst = serial.Serial()
+
+portsList = []
+
+for onePort in ports:
+    portsList.append(str(onePort))
+    print(str(onePort))
+
+val = input("Select Port: COM")
+
+for x in range(0,len(portsList)):
+    if portsList[x].startswith("COM" + str(val)):
+        portVar = "COM" + str(val)
+        print(portVar)
+
+serialInst.baudrate = 9600
+serialInst.port = portVar
+serialInst.open()
+
+while True:
+	if serialInst.in_waiting:
+		packet = serialInst.readline()
+		print(packet.decode('utf').rstrip('\n'))
 class HyperloopControlGUI(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -19,9 +47,11 @@ class HyperloopControlGUI(QMainWindow):
         # Start and stop buttons side by side
         button_layout = QHBoxLayout()
         title_layout = QHBoxLayout()
+        title_layout2 = QHBoxLayout()
         voltage_layout = QHBoxLayout()
         current_layout = QHBoxLayout()
         TempDisplay_layout = QHBoxLayout()
+        TempDisplay_layout2 = QHBoxLayout() 
         speed_layout = QHBoxLayout()
         speedDisplay_layout = QHBoxLayout()
         pos_pressure_layout = QHBoxLayout()
@@ -43,7 +73,7 @@ class HyperloopControlGUI(QMainWindow):
 
 
         button_layout.addWidget(self.start_button)
-        button_layout.addWidget(self.image_label)
+
         button_layout.addWidget(self.stop_button)
 
         # Displays for voltage and current
@@ -67,6 +97,12 @@ class HyperloopControlGUI(QMainWindow):
         self.voltage_display3.setStyleSheet(style)
         self.current_display3 = QLabel("Current: N/A A")
         self.current_display3.setStyleSheet(style)
+        self.SBL_display = QLabel("SBL")
+        self.temp_display3 = QLabel("Temperature: N/A °C")
+        self.temp_display3.setStyleSheet(style)
+        self.ambiant = QLabel("Ambiant")
+        self.temp_display4 = QLabel("Temperature: N/A °C")
+        self.temp_display4.setStyleSheet(style)
 
         title_layout.addWidget(self.battery_display)
         title_layout.addWidget(self.linear)
@@ -76,6 +112,10 @@ class HyperloopControlGUI(QMainWindow):
         current_layout.addWidget(self.current_display2)
         TempDisplay_layout.addWidget(self.temp_display)
         TempDisplay_layout.addWidget(self.temp_display2)
+        title_layout2.addWidget(self.SBL_display)
+        title_layout2.addWidget(self.ambiant)
+        TempDisplay_layout2.addWidget(self.temp_display3)
+        TempDisplay_layout2.addWidget(self.temp_display4)
 
         #Other Stuff
         self.target_speed = QLabel("Target Speed")
@@ -141,6 +181,8 @@ class HyperloopControlGUI(QMainWindow):
         main_layout.addLayout(voltage_layout)
         main_layout.addLayout(current_layout)
         main_layout.addLayout(TempDisplay_layout)
+        main_layout.addLayout(title_layout2) 
+        main_layout.addLayout(TempDisplay_layout2)
         main_layout.addWidget(self.pod)
         main_layout.addWidget(self.voltage_display3)
         main_layout.addWidget(self.current_display3)
@@ -163,8 +205,11 @@ class HyperloopControlGUI(QMainWindow):
         self.voltage_display2.setText(f"Voltage: JOEVER V")
         self.current_display2.setText("Current: JOEVER A")
         self.temp_display2.setText("Temperature: JOEVER °C")
+        self.temp_display3.setText("Temperature: JOEVER °C")
+        self.temp_display4.setText("Temperature: JOEVER °C")
         self.voltage_display3.setText(f"Voltage: JOEVER V")
         self.current_display3.setText("Current: JOEVER A")
+        self.TS_display.setText("North")
 
 
     def stop_train(self):
@@ -176,6 +221,8 @@ class HyperloopControlGUI(QMainWindow):
         self.voltage_display2.setText(f"Voltage: {voltage} V")
         self.current_display2.setText("Current: 0 A")
         self.temp_display2.setText("Temperature: 0 °C")
+        self.temp_display3.setText("Temperature: 0 °C")
+        self.temp_display4.setText("Temperature: 0 °C")
         self.voltage_display3.setText(f"Voltage: {voltage} V")
         self.current_display3.setText("Current: 0 A")
 
