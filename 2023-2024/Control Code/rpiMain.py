@@ -49,10 +49,17 @@ while True:
                 s.sendall(data)
                 data = s.recv(1024)
                 print(f"Received {data!r}")
-                time.sleep(1)  # Adjust the delay between messages if needed
+                time.sleep(1)  # Adjust/remove the delay between messages if needed
+
+                # Put state code and behavior here
+                
         except ConnectionRefusedError:
             print("Connection refused. Retrying...")
         except Exception as e:
             print(f"An error occurred: {e}")
         finally:
             time.sleep(1)  # Wait before reconnecting
+
+
+# Error, program closed
+# Shut down all power, deploy brakes
