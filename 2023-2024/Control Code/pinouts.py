@@ -6,15 +6,17 @@ yellow_LED_pin = 16 #G16
 green_LED_pin = 13 #G13
 
 #Brake power pins
-brakes_on_pin = 4 #G4
-brakes_off_pin = 5 #G5
+brakes_on_pin1 = 2 #G2
+brakes_on_pin2 = 3 #G3
+brakes_off_pin1 = 4 #G4
+brakes_off_pin2 = 5 #G5
 
 #LIM power pin
 LIM_power_pin = 6 #G6
 
 #Brake and LIM outputs
-brakes_on = OutputDevice(brakes_on_pin)
-brakes_off = OutputDevice(brakes_off_pin)
+brakes_on = OutputDevice(brakes_on_pin1, brakes_on_pin2)
+brakes_off = OutputDevice(brakes_off_pin1, brakes_off_pin2)
 LIM_power = OutputDevice(LIM_power_pin)
 
 #LED indicators
@@ -31,10 +33,16 @@ yellow_led = LED(yellow_LED_pin)
 green_led = LED(green_LED_pin)
 
 def apply_brakes():
-    brakes_on_pin.on()
+    brakes_off_pin1.off()
+    brakes_off_pin2.off()
+    brakes_on_pin1.on()
+    brakes_on_pin2.on()
 
 def release_brakes():
-    brakes_off_pin.off()
+    brakes_on_pin1.off()
+    brakes_on_pin2.off()
+    brakes_off_pin1.on()
+    brakes_off_pin2.on()
 
 def lim_power_on():
     LIM_power_pin.on()

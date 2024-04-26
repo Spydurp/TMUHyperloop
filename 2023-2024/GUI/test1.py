@@ -1,38 +1,15 @@
 import sys
 import serial.tools.list_ports
 from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QLabel, QVBoxLayout, QHBoxLayout, QWidget, QSlider, QPlainTextEdit, QTextEdit
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QPixmap
-#include <AM2302-Sensor.h>
-rts = serial.tools.list_ports.comports()
-serialInst = serial.Serial()
+import threading
+from threading import Thread
+import datetime
+import socket
 
-ports = serial.tools.list_ports.comports()
-serialInst = serial.Serial()
-
-portsList = []
-
-for onePort in ports:
-    portsList.append(str(onePort))
-    print(str(onePort))
-
-val = input("Select Port: COM")
-
-for x in range(0,len(portsList)):
-    if portsList[x].startswith("COM" + str(val)):
-        portVar = "COM" + str(val)
-        print(portVar)
-
-serialInst.baudrate = 9600
-serialInst.port = portVar
-serialInst.open()
-
-while True:
-	if serialInst.in_waiting:
-		packet = serialInst.readline()
-		print(packet.decode('utf').rstrip('\n'))
 class HyperloopControlGUI(QMainWindow):
-    def __init__(self):
+    def __init__(self, event):
         super().__init__()
 
         self.setWindowTitle("Joever")
@@ -170,6 +147,13 @@ class HyperloopControlGUI(QMainWindow):
         self.stop_button.clicked.connect(self.stop_train)
         self.command_button.clicked.connect(self.user_input)
 
+        # Define dataRead event
+        self.dataWasReadEvent = event
+        self.checkThreadTimer = QTimer()
+        # Check every .5 seconds
+        self.checkThreadTimer.start(500)
+        self.checkThreadTimer.timeout.connect(self.update_values)
+
         # Create a dictionary to use as a local scope for code execution
         self.console_locals = {}
 
@@ -192,6 +176,8 @@ class HyperloopControlGUI(QMainWindow):
         main_layout.addLayout(posPressureDisplay_layout)
         main_layout.addLayout(commandwindow_layout)
         central_widget.setLayout(main_layout)
+
+        
 
     def update_voltage_display(self):
         voltage = self.voltage_slider.value()
@@ -230,12 +216,59 @@ class HyperloopControlGUI(QMainWindow):
         # Implement code to print user input in command block
         print(self.command_window.toPlainText())
 
-def main():
+    def update_values(self):
+        # Check if data was read
+        if True:
+            file = open('2023-2024\GUI\data.txt', 'r')
+            line = file.readline()
+            data = line.split(',')
+            file.close()
+            # take values and update them
+            self.voltage_display.setText(f"Voltage: {data[0]} V")
+            self.voltage_display2.setText(f"Voltage: {data[1]} V")
+            self.voltage_display3.setText(f"Voltage: {data[2]} V")
+            self.current_display.setText(f"Current: {data[3]} A")
+            self.current_display2.setText(f"Current: {data[4]} A")
+            self.current_display3.setText(f"Current: {data[5]} A")
+            self.temp_display.setText(f"Temperature: {data[6]} °C")
+            self.temp_display2.setText(f"Temperature: {data[7]} °C")
+            self.temp_display3.setText(f"Temperature: {data[8]} °C")
+            self.temp_display4.setText(f"Temperature: {data[9]} °C")
+            #self.dataWasReadEvent.clear()
+        
+        
+
+def main(dataReadEvent):
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
-    window = HyperloopControlGUI()
+    window = HyperloopControlGUI(dataReadEvent)
     window.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
+
+def readData(dataReadEvent, conn: socket):
+    delay1 = datetime.datetime.now()
+    data = conn.recv(1024)
+    if not data:
+        exit()
+    conn.sendall(data)
+    print(data)
+    delay2 = datetime.datetime.now()
+    differencetime = (delay2 - delay1).total_seconds()
+    writedelay = int(5)
+    restart = (writedelay - differencetime)
+    dataReadEvent.set()
+    threading.Timer(restart, readData, args=(dataReadEvent, conn)).start()    
 
 if __name__ == "__main__":
-    main()
+    dataReadEvent = threading.Event()
+    HOST = "172.20.10.3"  # Standard loopback interface address (localhost)
+    PORT = 65431  # Port to listen on (non-privileged ports are > 1023)
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind((HOST, PORT))
+        s.listen()
+        conn, addr = s.accept()
+        with conn:
+            #print(f"Connected by {conn}")
+            readData(dataReadEvent, conn)
+        Thread(target = readData, args=(dataReadEvent, conn) ).start()
+        Thread(target = main, args=(dataReadEvent,) ).start()
