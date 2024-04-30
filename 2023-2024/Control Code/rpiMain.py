@@ -2,6 +2,17 @@ import socket
 import time
 import serial
 
+# Data Array Definitions
+BATVOLT = 0
+LIMVOLT = 1
+BATCUR = 2
+LIMCUR = 3
+VEL = 4
+LBRAKEON = 5
+LBRAKEOFF = 6
+RBRAKEON = 7
+RBRAKEOFF = 8
+
 start = time.time()
 
 if __name__ == '__main__':
@@ -47,7 +58,8 @@ while True:
                 file.close()
 
                 s.sendall(data)
-                data = s.recv(1024)
+                conn, addr = s.accept()
+                data = conn.recv(1024)
                 print(f"Received {data!r}")
                 time.sleep(1)  # Adjust/remove the delay between messages if needed
 

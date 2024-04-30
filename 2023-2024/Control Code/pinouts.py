@@ -11,6 +11,12 @@ brakes_on_pin2 = 3 #G3
 brakes_off_pin1 = 4 #G4
 brakes_off_pin2 = 5 #G5
 
+#Brake Position Pins
+brake_L_ON = 9
+brake_R_ON = 10
+brake_L_OFF = 11
+brake_R_OFF = 12
+
 #LIM power pin
 LIM_power_pin = 6 #G6
 

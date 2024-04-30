@@ -9,7 +9,7 @@ import datetime
 import socket
 
 class HyperloopControlGUI(QMainWindow):
-    def __init__(self, event):
+    def __init__(self, event, s: socket):
         super().__init__()
 
         self.setWindowTitle("Joever")
@@ -145,7 +145,7 @@ class HyperloopControlGUI(QMainWindow):
         # Connect buttons to their respective functions
         self.start_button.clicked.connect(self.start_train)
         self.stop_button.clicked.connect(self.stop_train)
-        self.command_button.clicked.connect(self.user_input)
+        self.command_button.clicked.connect(self.user_input(s))
 
         # Define dataRead event
         self.dataWasReadEvent = event
@@ -212,9 +212,16 @@ class HyperloopControlGUI(QMainWindow):
         self.voltage_display3.setText(f"Voltage: {voltage} V")
         self.current_display3.setText("Current: 0 A")
 
-    def user_input(self):
+    def user_input(self, s: socket):
         # Implement code to print user input in command block
         print(self.command_window.toPlainText())
+        # Send command to pod
+        try:
+            s.sendall(bytes(self.command_window.toPlainText(), 'utf-8'))
+        except:
+            print("Error")
+        
+        
 
     def update_values(self):
         # Check if data was read
@@ -238,10 +245,10 @@ class HyperloopControlGUI(QMainWindow):
         
         
 
-def main(dataReadEvent, appCloseEvent):
+def main(dataReadEvent, appCloseEvent, s: socket):
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
-    window = HyperloopControlGUI(dataReadEvent)
+    window = HyperloopControlGUI(dataReadEvent, s)
     window.show()
     if(app.exec()):
         appCloseEvent.set()
@@ -275,5 +282,5 @@ if __name__ == "__main__":
             #print(f"Connected by {conn}")
             
             data = conn.recv(1024)
-        Thread(target = main, args=(dataReadEvent, appCloseEvent) ).start()
+        Thread(target = main, args=(dataReadEvent, appCloseEvent, conn) ).start()
         Thread(target = readData, args=(dataReadEvent, appCloseEvent, data) ).start()
