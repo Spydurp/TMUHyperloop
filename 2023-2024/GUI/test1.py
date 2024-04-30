@@ -218,7 +218,7 @@ class HyperloopControlGUI(QMainWindow):
 
     def update_values(self):
         # Check if data was read
-        if True:
+        if self.dataWasReadEvent:
             file = open('2023-2024\GUI\data.txt', 'r')
             line = file.readline()
             data = line.split(',')
@@ -234,33 +234,37 @@ class HyperloopControlGUI(QMainWindow):
             self.temp_display2.setText(f"Temperature: {data[7]} °C")
             self.temp_display3.setText(f"Temperature: {data[8]} °C")
             self.temp_display4.setText(f"Temperature: {data[9]} °C")
-            #self.dataWasReadEvent.clear()
+            self.dataWasReadEvent.clear()
         
         
 
-def main(dataReadEvent):
+def main(dataReadEvent, appCloseEvent):
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
     window = HyperloopControlGUI(dataReadEvent)
     window.show()
-    sys.exit(app.exec())
+    if(app.exec()):
+        appCloseEvent.set()
+    sys.exit()
 
-def readData(dataReadEvent, conn: socket):
+def readData(dataReadEvent, appCloseEvent, data):
     delay1 = datetime.datetime.now()
-    data = conn.recv(1024)
-    if not data:
-        exit()
-    conn.sendall(data)
     print(data)
     delay2 = datetime.datetime.now()
     differencetime = (delay2 - delay1).total_seconds()
     writedelay = int(5)
     restart = (writedelay - differencetime)
     dataReadEvent.set()
-    threading.Timer(restart, readData, args=(dataReadEvent, conn)).start()    
+    if appCloseEvent:
+        sys.exit()
+    threading.Timer(restart, readData, args=(dataReadEvent, data)).start()    
 
 if __name__ == "__main__":
     dataReadEvent = threading.Event()
+    appCloseEvent = threading.Event()
+    dataReadEvent.clear()
+    appCloseEvent.clear()
+    
     HOST = "172.20.10.3"  # Standard loopback interface address (localhost)
     PORT = 65431  # Port to listen on (non-privileged ports are > 1023)
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -269,6 +273,7 @@ if __name__ == "__main__":
         conn, addr = s.accept()
         with conn:
             #print(f"Connected by {conn}")
-            readData(dataReadEvent, conn)
-        Thread(target = readData, args=(dataReadEvent, conn) ).start()
-        Thread(target = main, args=(dataReadEvent,) ).start()
+            
+            data = conn.recv(1024)
+        Thread(target = main, args=(dataReadEvent, appCloseEvent) ).start()
+        Thread(target = readData, args=(dataReadEvent, appCloseEvent, data) ).start()
