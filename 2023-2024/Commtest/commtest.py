@@ -3,7 +3,7 @@ import threading
 import socket
 import datetime
 
-HOST = "172.20.10.3"  # Standard loopback interface address (localhost)
+HOST = "172.20.10.10"  # Standard loopback interface address (localhost)
 PORT = 65431  # Port to listen on (non-privileged ports are > 1023)
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:

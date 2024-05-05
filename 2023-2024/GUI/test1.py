@@ -6,9 +6,15 @@ import threading
 from threading import Thread
 import datetime
 import socket
+import time
+
+appCloseEvent = False
+dataReadEvent = False   
+print("Flags Set")
 
 class HyperloopControlGUI(QMainWindow):
-    def __init__(self, event):
+
+    def __init__(self):
         super().__init__()
 
         self.setWindowTitle("Joever")
@@ -147,7 +153,6 @@ class HyperloopControlGUI(QMainWindow):
         self.command_button.clicked.connect(self.user_input)
 
         # Define dataRead event
-        self.dataWasReadEvent = event
         self.checkThreadTimer = QTimer()
         # Check every .5 seconds
         self.checkThreadTimer.start(500)
@@ -228,8 +233,9 @@ class HyperloopControlGUI(QMainWindow):
         
 
     def update_values(self):
+        global dataReadEvent
         # Check if data was read
-        if self.dataWasReadEvent:
+        if dataReadEvent:
             file = open('2023-2024\GUI\data.txt', 'r')
             line = file.readline()
             data = line.split(',')
@@ -245,20 +251,22 @@ class HyperloopControlGUI(QMainWindow):
             self.temp_display2.setText(f"Temperature: {data[7]} °C")
             self.temp_display3.setText(f"Temperature: {data[8]} °C")
             self.temp_display4.setText(f"Temperature: {data[9]} °C")
-            self.dataWasReadEvent.clear()
-        
-        
+            dataReadEvent = False    
 
-def main(dataReadEvent, appCloseEvent):
+def main():
+    global appCloseEvent
+    print("Main")
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
-    window = HyperloopControlGUI(dataReadEvent)
+    window = HyperloopControlGUI()
     window.show()
-    if(app.exec()):
-        appCloseEvent.set()
-    sys.exit()
+    if not app.exec():
+        appCloseEvent = True
+        print(appCloseEvent)
+        sys.exit()
+    print("Main Exit")
 
-def readData(dataReadEvent, appCloseEvent, conn: socket):
+def readData(conn: socket):
     delay1 = datetime.datetime.now()
     # Write data to data.txt
     try:
@@ -273,17 +281,15 @@ def readData(dataReadEvent, appCloseEvent, conn: socket):
     differencetime = (delay2 - delay1).total_seconds()
     writedelay = int(5)
     restart = (writedelay - differencetime)
-    dataReadEvent.set()
+    dataReadEvent = True
     if appCloseEvent:
         sys.exit()
     threading.Timer(restart, readData, args=(dataReadEvent, conn)).start()    
 
-if __name__ == "__main__":
-    dataReadEvent = threading.Event()
-    appCloseEvent = threading.Event()
-    dataReadEvent.clear()
-    appCloseEvent.clear()
-    
+
+if __name__ == '__main__':
+    Thread(target = main, args=()).start()
+
     HOST = "172.20.10.10"  # Standard loopback interface address (localhost)
     PORT = 65431  # Port to listen on (non-privileged ports are > 1023)
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -292,29 +298,15 @@ if __name__ == "__main__":
         conn, addr = s.accept()
         with conn:
             print(f"Connected by {conn}")
-            
-            data = conn.recv(1024)
-            print(data)
-            #Thread(target = main, args=(dataReadEvent, appCloseEvent) ).start()
-        
-        """while True:
-            delay1 = datetime.datetime.now()
-            # Write data to data.txt
-            with conn:
-                try:
-                    data = conn.recv(1024)
-                    print(data)
-                except Exception as e:
-                    print("An Exception Occured: {e}")
-            
-            dtxt = open("data.txt", 'wb')
-            dtxt.write(data)
-            dtxt.close()
-            delay2 = datetime.datetime.now()
-            differencetime = (delay2 - delay1).total_seconds()
-            writedelay = int(5)
-            restart = (writedelay - differencetime)
-            dataReadEvent.set()
-            if appCloseEvent:
-                sys.exit()
-                """
+            while True:
+                data = conn.recv(1024)
+                print(data)
+                dtxt = open("data.txt", 'wb')
+                dtxt.write(data)
+                dtxt.close()
+                dataReadEvent = True
+                print("data read")
+                print(appCloseEvent)
+                time.sleep(1)
+                if appCloseEvent:
+                    sys.exit()
