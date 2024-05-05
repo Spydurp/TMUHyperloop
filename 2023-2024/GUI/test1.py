@@ -1,5 +1,4 @@
 import sys
-import serial.tools.list_ports
 from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QLabel, QVBoxLayout, QHBoxLayout, QWidget, QSlider, QPlainTextEdit, QTextEdit
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QPixmap
@@ -9,7 +8,7 @@ import datetime
 import socket
 
 class HyperloopControlGUI(QMainWindow):
-    def __init__(self, event, s: socket):
+    def __init__(self, event):
         super().__init__()
 
         self.setWindowTitle("Joever")
@@ -145,7 +144,7 @@ class HyperloopControlGUI(QMainWindow):
         # Connect buttons to their respective functions
         self.start_button.clicked.connect(self.start_train)
         self.stop_button.clicked.connect(self.stop_train)
-        self.command_button.clicked.connect(self.user_input(s))
+        self.command_button.clicked.connect(self.user_input)
 
         # Define dataRead event
         self.dataWasReadEvent = event
@@ -200,6 +199,10 @@ class HyperloopControlGUI(QMainWindow):
 
     def stop_train(self):
         # Implement code to stop the train or perform relevant actions
+        # Send E-Stop signal to pod
+        # Kill power to lim
+        # Apply Brakes
+
         voltage = self.voltage_slider.value()
         self.voltage_display.setText(f"Voltage: {voltage} V")
         self.current_display.setText("Current: 0 A")
@@ -212,12 +215,13 @@ class HyperloopControlGUI(QMainWindow):
         self.voltage_display3.setText(f"Voltage: {voltage} V")
         self.current_display3.setText("Current: 0 A")
 
-    def user_input(self, s: socket):
+    def user_input(self):
         # Implement code to print user input in command block
         print(self.command_window.toPlainText())
         # Send command to pod
         try:
-            s.sendall(bytes(self.command_window.toPlainText(), 'utf-8'))
+            self.s.sendall(bytes(self.command_window.toPlainText(), 'utf-8'))
+            print("Sent")
         except:
             print("Error")
         
@@ -245,18 +249,26 @@ class HyperloopControlGUI(QMainWindow):
         
         
 
-def main(dataReadEvent, appCloseEvent, s: socket):
+def main(dataReadEvent, appCloseEvent):
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
-    window = HyperloopControlGUI(dataReadEvent, s)
+    window = HyperloopControlGUI(dataReadEvent)
     window.show()
     if(app.exec()):
         appCloseEvent.set()
     sys.exit()
 
-def readData(dataReadEvent, appCloseEvent, data):
+def readData(dataReadEvent, appCloseEvent, conn: socket):
     delay1 = datetime.datetime.now()
-    print(data)
+    # Write data to data.txt
+    try:
+        data = conn.recv(1024)
+    except:
+        print("An Exception Occured: {e}")
+
+    dtxt = open("data.txt", 'wb')
+    dtxt.write(data)
+    dtxt.close()
     delay2 = datetime.datetime.now()
     differencetime = (delay2 - delay1).total_seconds()
     writedelay = int(5)
@@ -264,7 +276,7 @@ def readData(dataReadEvent, appCloseEvent, data):
     dataReadEvent.set()
     if appCloseEvent:
         sys.exit()
-    threading.Timer(restart, readData, args=(dataReadEvent, data)).start()    
+    threading.Timer(restart, readData, args=(dataReadEvent, conn)).start()    
 
 if __name__ == "__main__":
     dataReadEvent = threading.Event()
@@ -272,15 +284,37 @@ if __name__ == "__main__":
     dataReadEvent.clear()
     appCloseEvent.clear()
     
-    HOST = "172.20.10.3"  # Standard loopback interface address (localhost)
+    HOST = "172.20.10.10"  # Standard loopback interface address (localhost)
     PORT = 65431  # Port to listen on (non-privileged ports are > 1023)
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind((HOST, PORT))
         s.listen()
         conn, addr = s.accept()
         with conn:
-            #print(f"Connected by {conn}")
+            print(f"Connected by {conn}")
             
             data = conn.recv(1024)
-        Thread(target = main, args=(dataReadEvent, appCloseEvent, conn) ).start()
-        Thread(target = readData, args=(dataReadEvent, appCloseEvent, data) ).start()
+            print(data)
+            #Thread(target = main, args=(dataReadEvent, appCloseEvent) ).start()
+        
+        """while True:
+            delay1 = datetime.datetime.now()
+            # Write data to data.txt
+            with conn:
+                try:
+                    data = conn.recv(1024)
+                    print(data)
+                except Exception as e:
+                    print("An Exception Occured: {e}")
+            
+            dtxt = open("data.txt", 'wb')
+            dtxt.write(data)
+            dtxt.close()
+            delay2 = datetime.datetime.now()
+            differencetime = (delay2 - delay1).total_seconds()
+            writedelay = int(5)
+            restart = (writedelay - differencetime)
+            dataReadEvent.set()
+            if appCloseEvent:
+                sys.exit()
+                """
