@@ -1,32 +1,44 @@
 import socket
 import time
 import serial
+import pinouts
+import podStates
 
 # Data Array Definitions
 BATVOLT = 0
-LIMVOLT = 1
-BATCUR = 2
-LIMCUR = 3
-VEL = 4
-LBRAKEON = 5
-LBRAKEOFF = 6
-RBRAKEON = 7
-RBRAKEOFF = 8
+BATCUR = 1
+BATTEMP = 2
+LIMVOLT = 3
+LIMCUR = 4
+LIMTEMP = 5
+VEL = 6
+LBRAKEON = 7
+LBRAKEOFF = 8
+RBRAKEON = 9
+RBRAKEOFF = 10
+
+# State Definitions
+SAFE = 0
+LAUNCH_READY = 1
+RUNNING = 2
+BRAKING = 3
+CRAWLING = 4
+FAULT = 5
 
 start = time.time()
 
-if __name__ == '__main__':
-    ser1 = serial.Serial('/dev/ttyACM0', 9600, timeout=1)
-    ser2 = serial.Serial('/dev/ttyACM1', 9600, timeout=1) #ACM2 does not exist atm
-    ser3 = serial.Serial('/dev/ttyACM2', 9600, timeout=1)
-    ser1.reset_input_buffer()
-    ser2.reset_input_buffer()
-    ser3.reset_input_buffer()
+ser1 = serial.Serial('/dev/ttyACM0', 9600, timeout=1)
+ser2 = serial.Serial('/dev/ttyACM1', 9600, timeout=1) #ACM2 does not exist atm
+ser3 = serial.Serial('/dev/ttyACM2', 9600, timeout=1)
+ser1.reset_input_buffer()
+ser2.reset_input_buffer()
+ser3.reset_input_buffer()
+
+# Brake Check
+podStates.brakeCheck()
     
 HOST = "172.20.10.3"  # The server's hostname or IP address
 PORT = 65431  # The port used by the server
-
-message = b"Hello, world"
 
 while True:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -57,12 +69,19 @@ while True:
                 file.write(data + " time: " + str(time.time() - start) + "\n")
                 file.close()
 
-                s.sendall(data)
-                conn, addr = s.accept()
-                data = conn.recv(1024)
+                s.sendall(bytes(data, 'utf-8'))
+                com_in = s.recv(1024).decode('utf-8')
                 print(f"Received {data!r}")
-                time.sleep(1)  # Adjust/remove the delay between messages if needed
-
+                # Parse command inputs
+                commands = com_in.split(" ")
+                commandSize = len(commands)
+                if "X" in commands or "!" not in commands:
+                    # E-Stop
+                    pinouts.apply_brakes()
+                    pinouts.lim_power_off()
+                    s.sendall(bytes("E-Stop Recieved: Power Cut", 'utf-8'))
+                
+                    
                 # Put state code and behavior here
                 
         except ConnectionRefusedError:

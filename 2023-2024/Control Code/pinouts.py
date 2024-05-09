@@ -1,4 +1,4 @@
-from gpiozero import LED, OutputDevice
+from gpiozero import LED, OutputDevice, Button
 
 #LED GPIO pins
 red_LED_pin = 17 #G17
@@ -12,10 +12,10 @@ brakes_off_pin1 = 4 #G4
 brakes_off_pin2 = 5 #G5
 
 #Brake Position Pins
-brake_L_ON = 9
-brake_R_ON = 10
-brake_L_OFF = 11
-brake_R_OFF = 12
+brake_L_ON = Button(9)
+brake_R_ON = Button(10)
+brake_L_OFF = Button(11)
+brake_R_OFF = Button(12)
 
 #LIM power pin
 LIM_power_pin = 6 #G6
@@ -69,6 +69,20 @@ def moving():
     green_LED_pin.on()
 
 def braking_coasting():
-    green_LED_pin.blink()
+    green_LED_pin.blink() # Implement blinking function, use multithreading
+
+def getLBrakePos():
+    if brake_L_ON == False and brake_L_OFF == True:
+        return 0
+    if brake_L_ON == True and brake_L_OFF == False:
+        return 1
+    return 2 # If neither is true, fault
+
+def getRBrakePos():
+    if brake_R_ON == False and brake_R_OFF == True:
+        return 0
+    if brake_R_ON == True and brake_R_OFF == False:
+        return 1
+    return 2 # If neither is true, fault
 
 

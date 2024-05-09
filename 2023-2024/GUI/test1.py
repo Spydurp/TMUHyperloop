@@ -8,9 +8,10 @@ import datetime
 import socket
 import time
 
+DATAFILE = "C:/Users/alexm/OneDrive/Desktop/Hyperloop/TMUHyperloop/2023-2024/GUI/data.txt"
+COMOUT = "!"
 appCloseEvent = False
 dataReadEvent = False   
-print("Flags Set")
 
 class HyperloopControlGUI(QMainWindow):
 
@@ -41,8 +42,8 @@ class HyperloopControlGUI(QMainWindow):
         commandwindow_layout = QVBoxLayout()
 
         style = "QPushButton { background-color: #1E8939; color: white; }"
-        self.start_button = QPushButton("Start")
-        self.start_button.setStyleSheet(style)
+        self.launch_button = QPushButton("Launch")
+        self.launch_button.setStyleSheet(style)
         style = "QPushButton { background-color: #E11313; color: white; }"
         self.stop_button = QPushButton("Stop")
         self.stop_button.setStyleSheet(style)
@@ -54,7 +55,7 @@ class HyperloopControlGUI(QMainWindow):
         self.image_label.setAlignment(Qt.AlignCenter)
 
 
-        button_layout.addWidget(self.start_button)
+        button_layout.addWidget(self.launch_button)
 
         button_layout.addWidget(self.stop_button)
 
@@ -148,7 +149,7 @@ class HyperloopControlGUI(QMainWindow):
         
 
         # Connect buttons to their respective functions
-        self.start_button.clicked.connect(self.start_train)
+        self.launch_button.clicked.connect(self.launch_train)
         self.stop_button.clicked.connect(self.stop_train)
         self.command_button.clicked.connect(self.user_input)
 
@@ -186,57 +187,33 @@ class HyperloopControlGUI(QMainWindow):
     def update_voltage_display(self):
         voltage = self.voltage_slider.value()
 
-    def start_train(self):
-        # Implement code to start the train or perform relevant actions
-        voltage = self.voltage_slider.value()
-        self.voltage_display.setText(f"Voltage: JOEVER V")
-        self.current_display.setText("Current: JOEVER A")
-        self.temp_display.setText("Temperature: JOEVER °C")
-        self.voltage_display2.setText(f"Voltage: JOEVER V")
-        self.current_display2.setText("Current: JOEVER A")
-        self.temp_display2.setText("Temperature: JOEVER °C")
-        self.temp_display3.setText("Temperature: JOEVER °C")
-        self.temp_display4.setText("Temperature: JOEVER °C")
-        self.voltage_display3.setText(f"Voltage: JOEVER V")
-        self.current_display3.setText("Current: JOEVER A")
-        self.TS_display.setText("North")
+    def launch_train(self):
+        # Send Launch Command
+        global COMOUT
+        COMOUT = COMOUT + " G"
+        print("Launch")
+        
 
 
     def stop_train(self):
-        # Implement code to stop the train or perform relevant actions
-        # Send E-Stop signal to pod
-        # Kill power to lim
-        # Apply Brakes
-
-        voltage = self.voltage_slider.value()
-        self.voltage_display.setText(f"Voltage: {voltage} V")
-        self.current_display.setText("Current: 0 A")
-        self.temp_display.setText("Temperature: 0 °C")
-        self.voltage_display2.setText(f"Voltage: {voltage} V")
-        self.current_display2.setText("Current: 0 A")
-        self.temp_display2.setText("Temperature: 0 °C")
-        self.temp_display3.setText("Temperature: 0 °C")
-        self.temp_display4.setText("Temperature: 0 °C")
-        self.voltage_display3.setText(f"Voltage: {voltage} V")
-        self.current_display3.setText("Current: 0 A")
+        # Send E-STOP Command
+        global COMOUT
+        COMOUT = COMOUT + " X"
+        print("Stop")
 
     def user_input(self):
+        global COMOUT
         # Implement code to print user input in command block
+        COMOUT = COMOUT + " " + self.command_window.toPlainText()
         print(self.command_window.toPlainText())
         # Send command to pod
-        try:
-            self.s.sendall(bytes(self.command_window.toPlainText(), 'utf-8'))
-            print("Sent")
-        except:
-            print("Error")
-        
         
 
     def update_values(self):
         global dataReadEvent
         # Check if data was read
         if dataReadEvent:
-            file = open('2023-2024\GUI\data.txt', 'r')
+            file = open('2023-2024/GUI/testData.txt', 'r')
             line = file.readline()
             data = line.split(',')
             file.close()
@@ -255,17 +232,15 @@ class HyperloopControlGUI(QMainWindow):
 
 def main():
     global appCloseEvent
-    print("Main")
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
     window = HyperloopControlGUI()
     window.show()
     if not app.exec():
         appCloseEvent = True
-        print(appCloseEvent)
         sys.exit()
-    print("Main Exit")
 
+# Delete later if unneccessary
 def readData(conn: socket):
     delay1 = datetime.datetime.now()
     # Write data to data.txt
@@ -289,24 +264,28 @@ def readData(conn: socket):
 
 if __name__ == '__main__':
     Thread(target = main, args=()).start()
-
+    
     HOST = "172.20.10.10"  # Standard loopback interface address (localhost)
     PORT = 65431  # Port to listen on (non-privileged ports are > 1023)
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind((HOST, PORT))
-        s.listen()
-        conn, addr = s.accept()
-        with conn:
-            print(f"Connected by {conn}")
-            while True:
-                data = conn.recv(1024)
-                print(data)
-                dtxt = open("data.txt", 'wb')
-                dtxt.write(data)
-                dtxt.close()
-                dataReadEvent = True
-                print("data read")
-                print(appCloseEvent)
-                time.sleep(1)
-                if appCloseEvent:
-                    sys.exit()
+    while True:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind((HOST, PORT))
+            s.listen()
+            conn, addr = s.accept()
+            with conn:
+                print(f"Connected by {conn}")
+                while True:
+                    data = conn.recv(1024)
+                    print(data)
+                    if data:
+                        dtxt = open(DATAFILE, 'w')
+                        dtxt.write("Test\n")
+                        dtxt.write(data.decode('utf-8'))
+                        dtxt.close()
+                        dataReadEvent = True
+                    # Send commands to RPI
+                    conn.sendall(bytes(COMOUT, 'utf-8'))
+                    COMOUT = "!" # After sending command, reset COMOUT to connection confirmation character
+                    time.sleep(0.5)
+                    if appCloseEvent:
+                        sys.exit()
