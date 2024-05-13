@@ -3,40 +3,21 @@ import time
 import serial
 import pinouts
 import podStates
-
-# Data Array Definitions
-BATVOLT = 0
-BATCUR = 1
-BATTEMP = 2
-LIMVOLT = 3
-LIMCUR = 4
-LIMTEMP = 5
-VEL = 6
-LBRAKEON = 7
-LBRAKEOFF = 8
-RBRAKEON = 9
-RBRAKEOFF = 10
-
-# State Definitions
-SAFE = 0
-LAUNCH_READY = 1
-RUNNING = 2
-BRAKING = 3
-CRAWLING = 4
-FAULT = 5
-CURSTATE = 0
+from threading import Thread
 
 start = time.time()
 
 ser1 = serial.Serial('/dev/ttyACM0', 9600, timeout=1)
 ser2 = serial.Serial('/dev/ttyACM1', 9600, timeout=1) #ACM2 does not exist atm
 ser3 = serial.Serial('/dev/ttyACM2', 9600, timeout=1)
+SBL = serial.Serial('COM3', 115200, bytesize=8, timeout=None, stopbits=1) # Find actual port name in testing
 ser1.reset_input_buffer()
 ser2.reset_input_buffer()
 ser3.reset_input_buffer()
 
 # Brake Check
-podStates.brakeCheck()
+if not podStates.brakeCheck():
+    print("ERROR: Brakes not cycling")
     
 HOST = "172.20.10.3"  # The server's hostname or IP address
 PORT = 65431  # The port used by the server
@@ -76,22 +57,26 @@ while True:
                 # Parse command inputs
                 commands = com_in.split(" ")
                 commandSize = len(commands)
-                if "X" in commands or "!" not in commands:
-                    # E-Stop
-                    pinouts.apply_brakes()
+
+                if commands[0] != '!' or commands[1] == 'X':
+                    print("connection broken")
+                    # Test !EX(Emergency Shutdown), !MS(Stop in all modes), !SFT(Safety stop)
+                    SBL.write(b'!EX')
                     pinouts.lim_power_off()
-                    s.sendall(bytes("E-Stop Recieved: Power Cut", 'utf-8'))
+                    pinouts.apply_brakes()
                 
-                    
-                # Put state code and behavior here
+                if commands[1] == 'G':
+                    # Set up power connections, close switches, release brakes
+                    Thread(target = podStates.launch, args=(SBL)).start()
                 
+                #End of loop, clear commands
+                commands = {}
+                com_in = ""
+                commandSize = 0
+        
         except ConnectionRefusedError:
             print("Connection refused. Retrying...")
         except Exception as e:
             print(f"An error occurred: {e}")
         finally:
             time.sleep(1)  # Wait before reconnecting
-
-
-# Error, program closed
-# Shut down all power, deploy brakes

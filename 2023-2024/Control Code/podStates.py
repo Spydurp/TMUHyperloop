@@ -1,8 +1,11 @@
 import pinouts
+import serial
 
 class Safe():
     brake_L_ON = True
     brake_R_ON = True
+    brake_L_OFF = False
+    brake_R_OFF = False
     bat_volt = 10
     bat_cur = 0
     bat_temp = 50
@@ -13,12 +16,22 @@ class Safe():
 
 def brakeCheck():
     if pinouts.getLBrakePos() and pinouts.getRBrakePos():
-        pinouts.release_brakes()
-        pinouts.apply_brakes()
+        release = pinouts.release_brakes()
+        apply = pinouts.apply_brakes()
     else:
-        pinouts.apply_brakes()
-        pinouts.release_brakes()
-        pinouts.apply_brakes()
+        apply = pinouts.apply_brakes()
+        release = pinouts.release_brakes()
+        apply = pinouts.apply_brakes()
+    if apply and release:
+        return True
+    else:
+        return False
+
+def launch(SBL: serial.Serial):
+    pinouts.release_brakes()
+    pinouts.lim_power_on()
+    SBL.write("!r")
+
     
     
     
