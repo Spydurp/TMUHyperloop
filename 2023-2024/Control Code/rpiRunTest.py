@@ -5,6 +5,12 @@ import pinouts
 import podStates
 from threading import Thread
 
+CURSTATE = 0
+SAFE = 0
+RUNNING = 1
+BRAKING = 2
+FAULT = 3
+
 start = time.time()
 
 ser1 = serial.Serial('/dev/ttyACM0', 9600, timeout=1)
@@ -18,6 +24,7 @@ ser3.reset_input_buffer()
 # Brake Check
 if not podStates.brakeCheck():
     print("ERROR: Brakes not cycling")
+    CURSTATE = FAULT
     
 HOST = "172.20.10.3"  # The server's hostname or IP address
 PORT = 65431  # The port used by the server
@@ -60,15 +67,25 @@ while True:
 
                 if commands[0] != '!' or commands[1] == 'X':
                     print("connection broken")
+                    CURSTATE = FAULT
                     # Test !EX(Emergency Shutdown), !MS(Stop in all modes), !SFT(Safety stop)
                     SBL.write(b'!EX')
                     pinouts.lim_power_off()
                     pinouts.apply_brakes()
+                    if pinouts.brake_L_OFF and pinouts.brake_R_OFF and not pinouts.brake_R_ON and not pinouts.brake_L_ON:
+                        CURSTATE = SAFE
                 
-                if commands[1] == 'G':
+                if commands[1] == 'G' and CURSTATE != FAULT and CURSTATE != RUNNING:
                     # Set up power connections, close switches, release brakes
-                    Thread(target = podStates.launch, args=(SBL)).start()
+                    CURSTATE = Thread(target = podStates.launch, args=(SBL)).start()
                 
+                if CURSTATE == FAULT:
+                    SBL.write(b'!EX')
+                    pinouts.lim_power_off()
+                    pinouts.apply_brakes()
+                    if pinouts.brake_L_OFF and pinouts.brake_R_OFF and not pinouts.brake_R_ON and not pinouts.brake_L_ON:
+                        CURSTATE = SAFE
+
                 #End of loop, clear commands
                 commands = {}
                 com_in = ""

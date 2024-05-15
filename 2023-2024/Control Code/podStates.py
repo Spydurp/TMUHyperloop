@@ -31,6 +31,7 @@ def launch(SBL: serial.Serial):
     pinouts.release_brakes()
     pinouts.lim_power_on()
     SBL.write("!r")
+    return 1
 
     
     
