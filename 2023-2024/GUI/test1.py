@@ -277,6 +277,8 @@ if __name__ == '__main__':
                 while True:
                     data = conn.recv(1024)
                     print(data)
+                    conn.sendall(bytes(COMOUT, 'utf-8'))
+                    COMOUT = "!" # After sending command, reset COMOUT to connection confirmation character
                     if data:
                         dtxt = open(DATAFILE, 'w')
                         dtxt.write("Test\n")
@@ -284,8 +286,5 @@ if __name__ == '__main__':
                         dtxt.close()
                         dataReadEvent = True
                     # Send commands to RPI
-                    conn.sendall(bytes(COMOUT, 'utf-8'))
-                    COMOUT = "!" # After sending command, reset COMOUT to connection confirmation character
-                    time.sleep(0.5)
                     if appCloseEvent:
                         sys.exit()
