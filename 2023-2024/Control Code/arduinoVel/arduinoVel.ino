@@ -1,37 +1,36 @@
-#include "Timer.h"
+#include <arduino-timer.h>
 
-int sensor = 9;
+int sensor = 2;
 double d = 0.1;
 double circum = 3.14159265*d;
-Timer timer(MILLIS);
-unsigned int elapsedTime=0;
-int counter;
+auto timer = timer_create_default();
+double gapInterval = 15;
+int counter = 0;
 double vel;
-double RPM = 0;
+double RPS = 0;
 
 void setup(){
   Serial.begin(9600);
-  pinMode(9, INPUT);
-  timer.start();
+  pinMode(2, INPUT);
+  timer.every(1000, velCalc);
 }
 
 void loop(){
-  unsigned int time = 0;
+  timer.tick();
   
 
   if(!digitalRead(sensor)){
     counter++;
     while(!digitalRead(sensor));
   }
-  if(counter >= 24){
-    counter = 0;
-    time = timer.read() - elapsedTime;
-    elapsedTime = timer.read();
-    RPM = 1.0/(time/1000.0);
-    vel = (double) circum*RPM;
 
-    Serial.print("Velocity: ");
-    Serial.println(vel);
-  }
 
+}
+
+bool velCalc(){
+  RPS = (counter*15/360)/1;
+  vel = (double) circum*RPS;
+  counter = 0;
+  Serial.print("Velocity: ");
+  Serial.println(vel);
 }
