@@ -21,13 +21,18 @@ class HyperloopControlGUI(QMainWindow):
         button_layout = QHBoxLayout()
         title_layout = QHBoxLayout()
         title_layout2 = QHBoxLayout()
+        LIM_title_layout = QHBoxLayout()
         bat1_2_vLayout = QHBoxLayout()
         bat1_2_cLayout = QHBoxLayout()
         bat1_2_tLayout = QHBoxLayout()
         bat3_4_vLayout = QHBoxLayout()
         bat3_4_cLayout = QHBoxLayout()
         bat3_4_tLayout = QHBoxLayout()
-        TempDisplay_layout2 = QHBoxLayout() 
+        LIM_Layout = QHBoxLayout()
+        brake_title_layout = QHBoxLayout()
+        brake_layout = QHBoxLayout()
+        state_title_layout = QHBoxLayout()
+        state_layout = QHBoxLayout()
         speed_layout = QHBoxLayout()
         speedDisplay_layout = QHBoxLayout()
         pos_pressure_layout = QHBoxLayout()
@@ -107,33 +112,48 @@ class HyperloopControlGUI(QMainWindow):
         title_layout2.addWidget(self.bat3_display)
         title_layout2.addWidget(self.bat4_display)
 
+        self.limDisplay = QLabel("LIM:")
+        self.limVolt = QLabel("Voltage: N/A V")
+        self.limVolt.setStyleSheet(style)
+        self.limCur = QLabel("Current: N/A A")
+        self.limCur.setStyleSheet(style)
+        self.limTemp = QLabel("Temperature: N/A °C")
+        self.limTemp.setStyleSheet(style)
+
+        LIM_title_layout.addWidget(self.limDisplay)
+        LIM_Layout.addWidget(self.limVolt)
+        LIM_Layout.addWidget(self.limCur)
+        LIM_Layout.addWidget(self.limTemp)
+
+        self.brakeDisplay = QLabel("Brake Position:")
+        self.brake_1_pos = QLabel("Deployed")
+        self.brake_1_pos.setStyleSheet(style)
+        self.brake_2_pos = QLabel("Deployed")
+        self.brake_2_pos.setStyleSheet(style)
+
+        brake_title_layout.addWidget(self.brakeDisplay)
+        brake_layout.addWidget(self.brake_1_pos)
+        brake_layout.addWidget(self.brake_2_pos)
+
+        self.stateDisplay = QLabel("Current State:")
+        self.state = QLabel("Safe to Approach")
+        self.state.setStyleSheet(style)
+
+        state_title_layout.addWidget(self.stateDisplay)
+        state_layout.addWidget(self.state)
+
         #Other Stuff
-        self.target_speed = QLabel("Target Speed")
-        self.TS_display = QLabel("N/A m/s")
-        self.TS_display.setStyleSheet(style)
         self.current_speed = QLabel("Current Speed")
         self.CS_display = QLabel("N/A m/s")
         self.CS_display.setStyleSheet(style)
-        self.acceleration = QLabel("Acceleration")
-        self.A_display = QLabel("N/A m/s^2")
-        self.A_display.setStyleSheet(style)
         self.position = QLabel("Position")
-        self.Pos_display = QLabel ("North/East/South/West")
+        self.Pos_display = QLabel ("0 m")
         self.Pos_display.setStyleSheet(style)
-        self.pressure = QLabel ("Pressure")
-        self.P_display = QLabel("N/A N/M^2")
-        self.P_display.setStyleSheet(style)
 
-        speed_layout.addWidget(self.target_speed)
         speed_layout.addWidget(self.current_speed)
-        speed_layout.addWidget(self.acceleration)
-        speedDisplay_layout.addWidget(self.TS_display)
         speedDisplay_layout.addWidget(self.CS_display)
-        speedDisplay_layout.addWidget(self.A_display)
         pos_pressure_layout.addWidget(self.position)
-        pos_pressure_layout.addWidget(self.pressure)
         posPressureDisplay_layout.addWidget(self.Pos_display)
-        posPressureDisplay_layout.addWidget(self.P_display)
         
 
         # Connect buttons to their respective functions
@@ -155,7 +175,15 @@ class HyperloopControlGUI(QMainWindow):
         main_layout.addLayout(bat3_4_cLayout)
         main_layout.addLayout(bat3_4_tLayout)
 
-        main_layout.addLayout(TempDisplay_layout2)
+        main_layout.addLayout(LIM_title_layout)
+        main_layout.addLayout(LIM_Layout)
+
+        main_layout.addLayout(brake_title_layout)
+        main_layout.addLayout(brake_layout)
+
+        main_layout.addLayout(state_title_layout)
+        main_layout.addLayout(state_layout)
+
         main_layout.addLayout(speed_layout)
         main_layout.addLayout(speedDisplay_layout)
         main_layout.addLayout(pos_pressure_layout)
@@ -168,7 +196,7 @@ def main():
     app.setStyle("Fusion")
     window = HyperloopControlGUI()
     window.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
 
 if __name__ == "__main__":
     main()
