@@ -1,5 +1,6 @@
 import time
 import serial
+import StateMachine
 
 # Data Array Definitions
 BATVOLT = 0
@@ -23,4 +24,10 @@ FAULT = -1
 
 curState = 0
 
-#Run startup tests here
+# Run startup tests here
+# Brake test
+
+# initialize connection thread
+# initialize state machine thread
+StateMachine.StateMachine()
+# initialize data input thread
