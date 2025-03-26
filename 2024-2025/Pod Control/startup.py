@@ -1,6 +1,7 @@
 import time
 import serial
 import StateMachine
+import threading
 
 # Data Array Definitions
 BATVOLT = 0
@@ -22,12 +23,17 @@ RUNNING = 2
 BRAKING = 3
 FAULT = -1
 
-curState = 0
+curState = SAFE
 
 # Run startup tests here
 # Brake test
 
+# create mutex lock
+sensor_lock = threading.Lock()
+commands_lock = threading.Lock()
+
 # initialize connection thread
 # initialize state machine thread
-StateMachine.StateMachine()
+stateMachineThread = threading.Thread(StateMachine.main, sensor_lock, commands_lock)
+StateMachine.main()
 # initialize data input thread

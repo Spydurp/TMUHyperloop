@@ -1,3 +1,4 @@
+import threading
 
 # Data Array Definitions
 BATVOLT = 0
@@ -53,3 +54,25 @@ def StateMachine(State: int, sensorvals: list, commands) -> int:
 
     
     return curState
+
+current_state = SAFE
+
+def main(sensor_lock: threading.Lock, commands_lock: threading.Lock):
+    commandsFile = open("2024-2025\Pod Control\commands.txt", "r")
+    sensorvals = open("2024-2025\Pod Control\sensorvals.txt", "r")
+    while True:
+        # access sensor data file
+        # insert read function for data file
+        sensor_lock.acquire()
+        with sensor_lock:
+            sensor_data = sensorvals.read()
+        sensor_lock.release()
+
+        # access Commands file
+        # insert read function for commands file
+        commands_lock.acquire()
+        with commands_lock:
+            commands = commandsFile.read()
+        commands_lock.release()
+        
+        current_state = StateMachine(current_state, sensor_data, commands)
