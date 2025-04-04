@@ -1,5 +1,4 @@
 import RPi.GPIO as GPIO
-import time
 
 # Use BCM numbering
 GPIO.setmode(GPIO.BCM)
@@ -16,10 +15,6 @@ brake_sensors = {
     "Brake 4 (R)": 6
 }
 
-# Set up input pins with pull-down resistors
-for pin in brake_sensors.values():
-    GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)    #Default to Low (0v)
-
 # Output Pins
 led_pins = {
     "LED 1": 12,
@@ -27,55 +22,34 @@ led_pins = {
     "LED 3": 19
 }
 
-brake_control_pins = {
+brake_power_pins = {
     "Brake Control S1": 16,
     "Brake Control S2": 20,
     "Brake Control S3": 21,
-    "Brake Control S4": 18  #Optional 4th brake switch
+    "Brake Control S4": 18 
 }
 
 vfd_pin = 26
 
-# Set up all output pins
-for pin in led_pins.values():
-    GPIO.setup(pin, GPIO.OUT)
+main_circuit_pins = {
+    "Main Switch" : 14,
+    "VFD Switch 1" : 15,
+    "VFD Switch 2" : 2
+}
 
-for pin in brake_control_pins.values():
-    GPIO.setup(pin, GPIO.OUT)
-
-GPIO.setup(vfd_pin, GPIO.OUT)
-
-
-# Main Loop
-try:
-    print("Monitoring brake sensors... (Ctrl+C to stop)\n")
-
-    # Optional test: Turn all outputs ON briefly
+def pin_init():
+    # Set up all output pins
     for pin in led_pins.values():
-        GPIO.output(pin, GPIO.HIGH)
-    for pin in brake_control_pins.values():
-        GPIO.output(pin, GPIO.HIGH)
-    GPIO.output(vfd_pin, GPIO.HIGH)
+        GPIO.setup(pin, GPIO.OUT)
 
-    time.sleep(1)  # wait 1 sec
+    for pin in brake_power_pins.values():
+        GPIO.setup(pin, GPIO.OUT)
+    
+    for pin in main_circuit_pins.values():
+        GPIO.setup(pin, GPIO.OUT)
 
-    # Turn all outputs OFF
-    for pin in led_pins.values():
-        GPIO.output(pin, GPIO.LOW)
-    for pin in brake_control_pins.values():
-        GPIO.output(pin, GPIO.LOW)
-    GPIO.output(vfd_pin, GPIO.LOW)
+    # Set up input pins with pull-down resistors
+    for pin in brake_sensors.values():
+        GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)    #Default to Low (0v)
 
-    # Begin sensor monitoring loop
-    while True:
-        for name, pin in brake_sensors.items():
-            state = GPIO.input(pin)
-            print(f"{name}: {'ENGAGED' if state else 'OFF'}")
-        print("-" * 40)
-        time.sleep(1)
-
-except KeyboardInterrupt:
-    print("\nExiting...")
-
-finally:
-    GPIO.cleanup()
+    GPIO.setup(vfd_pin, GPIO.OUT)

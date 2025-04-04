@@ -1,4 +1,6 @@
 import threading
+import RPi.GPIO as GPIO
+import RpiPinouts
 
 # Data Array Definitions
 BATVOLT = 0
@@ -27,6 +29,25 @@ def StateMachine(State: int, sensorvals: list, commands) -> int:
         # If commands are received from station and sensorvals are ok, run Safe -> Launch ready function
         # If anything goes wrong, transition to fault
         # Update curState
+
+        # Run Brake Check function
+        # Set Brake Pins to Low
+        for pin in RpiPinouts.brake_power_pins.values():
+            GPIO.output(pin, GPIO.LOW)
+        # ...
+
+        if commands == "prep launch":
+            # deploy brakes
+            GPIO.output(RpiPinouts.brake_power_pins["Brake Control S1"], GPIO.HIGH)
+            GPIO.output(RpiPinouts.brake_power_pins["Brake Control S2"], GPIO.HIGH)
+            GPIO.output(RpiPinouts.brake_power_pins["Brake Control S3"], GPIO.HIGH)
+            GPIO.output(RpiPinouts.brake_power_pins["Brake Control S4"], GPIO.HIGH)
+
+            # Set main power pins to high
+            for pin in RpiPinouts.main_circuit_pins.values():
+                GPIO.output(pin, GPIO.HIGH)
+            
+
         print("Safe to approach")
     if curState == LAUNCH_READY:
         # Ready to launch stuff
@@ -60,6 +81,7 @@ current_state = SAFE
 def main(sensor_lock: threading.Lock, commands_lock: threading.Lock):
     commandsFile = open("2024-2025\Pod Control\commands.txt", "r")
     sensorvals = open("2024-2025\Pod Control\sensorvals.txt", "r")
+    RpiPinouts.pin_init()
     while True:
         # access sensor data file
         # insert read function for data file
