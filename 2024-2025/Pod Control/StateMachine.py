@@ -31,6 +31,7 @@ def StateMachine(State: int, sensorvals: list, commands) -> int:
         # Update curState
 
         # Run Brake Check function
+
         # Set Brake Pins to Low
         for pin in RpiPinouts.brake_power_pins.values():
             GPIO.output(pin, GPIO.LOW)
@@ -52,8 +53,21 @@ def StateMachine(State: int, sensorvals: list, commands) -> int:
     if curState == LAUNCH_READY:
         # Ready to launch stuff
         # If commands are received from station and sensorvals are ok, run launch function
+        if commands == "Launch":
+            #close main circuit switches
+            GPIO.output(RpiPinouts.main_circuit_pins["Main Switch"], GPIO.HIGH)
+            GPIO.output(RpiPinouts.main_circuit_pins["VFD Switch 1"], GPIO.HIGH)
+            GPIO.output(RpiPinouts.main_circuit_pins["VFD Switch 2"], GPIO.HIGH)
+
+            GPIO.output(RpiPinouts.vfd_pin, GPIO.HIGH) # close switch that tells lim to actually start
+
+            #update to running
+
+
         # If anything goes wrong, transition to fault
+
         # Update curState
+
         print("Ready to Launch")
     if curState == RUNNING:
         # Running stuff

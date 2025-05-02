@@ -53,3 +53,6 @@ def pin_init():
         GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)    #Default to Low (0v)
 
     GPIO.setup(vfd_pin, GPIO.OUT)
+
+def brake_check():
+    pass

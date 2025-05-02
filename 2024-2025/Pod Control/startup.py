@@ -2,6 +2,7 @@ import time
 import serial
 import StateMachine
 import threading
+import RpiPinouts
 
 # Data Array Definitions
 BATVOLT = 0
@@ -27,6 +28,7 @@ curState = SAFE
 
 # Run startup tests here
 # Brake test
+RpiPinouts.brake_check()
 
 # create mutex lock
 sensor_lock = threading.Lock()
