@@ -1,4 +1,7 @@
 import RPi.GPIO as GPIO
+import time
+
+TIMEOUT = 5 # Seconds before timeout for brake check
 
 # Use BCM numbering
 GPIO.setmode(GPIO.BCM)
@@ -37,6 +40,7 @@ main_circuit_pins = {
     "VFD Switch 2" : 2
 }
 
+
 def pin_init():
     # Set up all output pins
     for pin in led_pins.values():
@@ -54,5 +58,30 @@ def pin_init():
 
     GPIO.setup(vfd_pin, GPIO.OUT)
 
-def brake_check():
-    pass
+def brake_check() -> bool:
+    # Deploy brakes
+    GPIO.output(brake_power_pins["Brake Control S1"], GPIO.HIGH)
+    GPIO.output(brake_power_pins["Brake Control S2"], GPIO.HIGH)
+    GPIO.output(brake_power_pins["Brake Control S3"], GPIO.HIGH)
+    GPIO.output(brake_power_pins["Brake Control S4"], GPIO.HIGH)
+    # wait until brakes are fully deployed
+    t = time.perf_counter()
+    while GPIO.input(brake_sensors["Brake 1 (D)"]) != GPIO.HIGH and GPIO.input(brake_sensors["Brake 1 (R)"]) != GPIO.LOW and GPIO.input(brake_sensors["Brake 2 (D)"]) != GPIO.HIGH and GPIO.input(brake_sensors["Brake 2 (R)"]) != GPIO.LOW and GPIO.input(brake_sensors["Brake 3 (D)"]) != GPIO.HIGH and GPIO.input(brake_sensors["Brake 3 (R)"]) != GPIO.LOW and GPIO.input(brake_sensors["Brake 4 (D)"]) != GPIO.HIGH and GPIO.input(brake_sensors["Brake 4 (R)"]) != GPIO.LOW:
+        # Timout after some time, means brakes aren't working properly
+        if time.perf_counter() - t > TIMEOUT:
+            return False
+        time.sleep(0.5)
+    # retract brakes
+    GPIO.output(brake_power_pins["Brake Control S1"], GPIO.LOW)
+    GPIO.output(brake_power_pins["Brake Control S2"], GPIO.LOW)
+    GPIO.output(brake_power_pins["Brake Control S3"], GPIO.LOW)
+    GPIO.output(brake_power_pins["Brake Control S4"], GPIO.LOW)
+    #Wait until brakes are fully retracted
+    t = time.perf_counter()
+    while GPIO.input(brake_sensors["Brake 1 (D)"]) != GPIO.LOW and GPIO.input(brake_sensors["Brake 1 (R)"]) != GPIO.HIGH and GPIO.input(brake_sensors["Brake 2 (D)"]) != GPIO.LOW and GPIO.input(brake_sensors["Brake 2 (R)"]) != GPIO.HIGH and GPIO.input(brake_sensors["Brake 3 (D)"]) != GPIO.LOW and GPIO.input(brake_sensors["Brake 3 (R)"]) != GPIO.HIGH and GPIO.input(brake_sensors["Brake 4 (D)"]) != GPIO.LOW and GPIO.input(brake_sensors["Brake 4 (R)"]) != GPIO.HIGH:
+        # Timeout after some time, means brakes aren't working properly
+        if time.perf_counter() - t > TIMEOUT:
+            return False
+        time.sleep(0.5)
+    
+    return True

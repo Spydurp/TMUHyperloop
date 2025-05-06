@@ -30,8 +30,6 @@ def StateMachine(State: int, sensorvals: list, commands) -> int:
         # If anything goes wrong, transition to fault
         # Update curState
 
-        # Run Brake Check function
-
         # Set Brake Pins to Low
         for pin in RpiPinouts.brake_power_pins.values():
             GPIO.output(pin, GPIO.LOW)
