@@ -6,6 +6,7 @@ import random
 import argparse
 
 class HyperloopTCPServer:
+    #def __init__(self, host='127.0.0.1', port=5000):
     def __init__(self, host='0.0.0.0', port=5000):
         self.host = host
         self.port = port
@@ -291,5 +292,6 @@ class HyperloopTCPServer:
             self.send_state_to_all_clients()
             time.sleep(0.5)  # Adjust frequency of updates
 
-server = HyperloopTCPServer()
-server.start()
+if __name__ == "__main__":
+    server = HyperloopTCPServer(host='0.0.0.0')
+    server.start()
