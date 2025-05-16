@@ -1,5 +1,5 @@
 import threading
-import RPi.GPIO as GPIO
+import gpiozero
 import RpiPinouts
 
 # Data Array Definitions
@@ -30,21 +30,12 @@ def StateMachine(State: int, sensorvals: list, commands) -> int:
         # If anything goes wrong, transition to fault
         # Update curState
 
-        # Set Brake Pins to Low
-        for pin in RpiPinouts.brake_power_pins.values():
-            GPIO.output(pin, GPIO.LOW)
-        # ...
+        # deploy brakes
+        RpiPinouts.deploy_brakes()
 
         if commands == "prep launch":
-            # deploy brakes
-            GPIO.output(RpiPinouts.brake_power_pins["Brake Control S1"], GPIO.HIGH)
-            GPIO.output(RpiPinouts.brake_power_pins["Brake Control S2"], GPIO.HIGH)
-            GPIO.output(RpiPinouts.brake_power_pins["Brake Control S3"], GPIO.HIGH)
-            GPIO.output(RpiPinouts.brake_power_pins["Brake Control S4"], GPIO.HIGH)
-
             # Set main power pins to high
-            for pin in RpiPinouts.main_circuit_pins.values():
-                GPIO.output(pin, GPIO.HIGH)
+            RpiPinouts.main_power_on()
             
 
         print("Safe to approach")
