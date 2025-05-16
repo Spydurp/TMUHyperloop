@@ -1,5 +1,5 @@
 import threading
-import RPi.GPIO as GPIO
+import gpiozero
 import RpiPinouts
 import time
 
@@ -32,6 +32,16 @@ def StateMachine(State: int, sensorvals: list, commands) -> int:
         # If anything goes wrong, transition to fault
         # Update curState
 
+        # deploy brakes
+        RpiPinouts.deploy_brakes()
+
+        if commands == "prep launch":
+            # Set main power pins to high
+            RpiPinouts.main_power_on()
+            
+
+        print("Safe to approach")
+
         # Run Brake Check function
 
         #Main circuit power off:
@@ -51,10 +61,28 @@ def StateMachine(State: int, sensorvals: list, commands) -> int:
             curState = LAUNCH_READY               
 
     if curState == LAUNCH_READY:
+
+
         # Ready to launch stuff
         # If commands are received from station and sensorvals are ok, run launch function
+        if commands == "Launch":
+            # Release Brakes
+            for pin in RpiPinouts.brake_power_pins.values():
+                GPIO.output(pin, GPIO.LOW)
+            #close main circuit switches
+            GPIO.output(RpiPinouts.main_circuit_pins["Main Switch"], GPIO.HIGH)
+            GPIO.output(RpiPinouts.main_circuit_pins["VFD Switch 1"], GPIO.HIGH)
+            GPIO.output(RpiPinouts.main_circuit_pins["VFD Switch 2"], GPIO.HIGH)
+
+            GPIO.output(RpiPinouts.vfd_pin, GPIO.HIGH) # close switch that tells lim to actually start
+
+            # update to running
+
+
         # If anything goes wrong, transition to fault
+
         # Update curState
+
         
         #keep brakes applied during ready state:
         for pin in RpiPinouts.brake_power_pins.values():
