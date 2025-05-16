@@ -18,9 +18,9 @@ brake_sensors = {
 
 # Output Pins
 led_pins = {
-    "LED 1": gpiozero.LED(12),
-    "LED 2": gpiozero.LED(13),
-    "LED 3": gpiozero.LED(19)
+    "LED 1": gpiozero.LED(12), # Green
+    "LED 2": gpiozero.LED(13), # Yellow
+    "LED 3": gpiozero.LED(19)  # Red
 }
 
 brake_power_pins = {
@@ -102,3 +102,7 @@ def main_power_off() -> None:
     main_circuit_pins["Main Switch"].off()
     main_circuit_pins["VFD Switch 1"].off()
     main_circuit_pins["VFD Switch 2"].off()
+
+def LIM_run() -> None:
+    vfd_pin.on()
+

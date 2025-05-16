@@ -24,6 +24,14 @@ RUNNING = 2
 BRAKING = 3
 FAULT = -1
 
+stateToStr = {
+    SAFE : "Safe to Approach",
+    LAUNCH_READY: "Ready to Launch",
+    RUNNING : "Running",
+    BRAKING : "Braking",
+    FAULT : "Fault"
+}
+
 def StateMachine(State: int, sensorvals: list, commands) -> int:
     curState = State
     if curState == SAFE:
@@ -35,76 +43,47 @@ def StateMachine(State: int, sensorvals: list, commands) -> int:
         # deploy brakes
         RpiPinouts.deploy_brakes()
 
+        # Main circuit power off:
+        RpiPinouts.main_power_off()
+
         if commands == "prep launch":
             # Set main power pins to high
             RpiPinouts.main_power_on()
+            curState = LAUNCH_READY  
             
-
-        print("Safe to approach")
-
-        # Run Brake Check function
-
-        #Main circuit power off:
-        for pin in RpiPinouts.main_circuit_pins.values():
-            GPIO.output(pin, GPIO.LOW)
-        #No brakes:
-        for pin in RpiPinouts.brake_power_pins.values():
-            GPIO.output(pin, GPIO.LOW)
-        print("Safe to approach")
-
-        if commands == "prep launch":
-            GPIO.output(RpiPinouts.brake_power_pins["Brake Control S1"], GPIO.HIGH) # applying the brakes so pod is safe to approach
-            GPIO.output(RpiPinouts.brake_power_pins["Brake Control S2"], GPIO.HIGH)
-            GPIO.output(RpiPinouts.brake_power_pins["Brake Control S3"], GPIO.HIGH)
-            GPIO.output(RpiPinouts.brake_power_pins["Brake Control S4"], GPIO.HIGH)    
-            print("Brakes applied - Launch ready")
-            curState = LAUNCH_READY               
+        print(stateToStr[curState])
+                         
 
     if curState == LAUNCH_READY:
 
 
         # Ready to launch stuff
+
+        #keep brakes applied during ready state:
+        RpiPinouts.deploy_brakes()
+
         # If commands are received from station and sensorvals are ok, run launch function
         if commands == "Launch":
             # Release Brakes
-            for pin in RpiPinouts.brake_power_pins.values():
-                GPIO.output(pin, GPIO.LOW)
+            RpiPinouts.retract_brakes()
             #close main circuit switches
-            GPIO.output(RpiPinouts.main_circuit_pins["Main Switch"], GPIO.HIGH)
-            GPIO.output(RpiPinouts.main_circuit_pins["VFD Switch 1"], GPIO.HIGH)
-            GPIO.output(RpiPinouts.main_circuit_pins["VFD Switch 2"], GPIO.HIGH)
+            RpiPinouts.main_power_on()
 
-            GPIO.output(RpiPinouts.vfd_pin, GPIO.HIGH) # close switch that tells lim to actually start
+            RpiPinouts.LIM_run() # close switch that tells lim to actually start
 
             # update to running
-
-
-        # If anything goes wrong, transition to fault
-
-        # Update curState
-
-        
-        #keep brakes applied during ready state:
-        for pin in RpiPinouts.brake_power_pins.values():
-            GPIO.output(pin, GPIO.HIGH) 
-        #keep main circuit power off:
-        for pin in RpiPinouts.main_circuit_pins.values():
-            GPIO.output(pin, GPIO.LOW)
-        print("Ready to Launch")
-
-        if commands == "launch":
-            # Turn on main power:
-            for pin in RpiPinouts.main_circuit_pins.values():
-                GPIO.output(pin, GPIO.HIGH)
-            # Release brakes:
-            for pin in RpiPinouts.brake_power_pins.values():
-                GPIO.output(pin, GPIO.LOW)
-            print("Launching")
-            curState = RUNNING    # Question 1: can we remove the code above and replace with curState = RUNNING?
+            curState = RUNNING
         
         # if launch is canceld, go back to safe state
         if commands == "no launch":
-            curState = SAFE               
+            RpiPinouts.deploy_brakes()
+            RpiPinouts.main_power_off()
+            curState = SAFE 
+
+        # If anything goes wrong, transition to fault
+
+        print(stateToStr[curState])
+                      
 
     if curState == RUNNING:
         # Running stuff
@@ -112,16 +91,17 @@ def StateMachine(State: int, sensorvals: list, commands) -> int:
         # If anything goes wrong, transition to fault               
 
         #keep main power on:
-        for pin in RpiPinouts.main_circuit_pins.values():
-            GPIO.output(pin, GPIO.HIGH)
+        RpiPinouts.main_power_on()
         #keep brakes released:
-        for pin in RpiPinouts.brake_power_pins.values():
-            GPIO.output(pin, GPIO.LOW)
-        print("Running")
+        RpiPinouts.retract_brakes()
+        
 
         if commands == "brake":
-            print("Braking initiated")
+            RpiPinouts.main_power_off()
+            RpiPinouts.deploy_brakes()
             curState = BRAKING   # If command says brake, move to BRAKING
+        
+        print(stateToStr[curState])
 
     if curState == BRAKING:
         # Braking stuff
@@ -129,44 +109,36 @@ def StateMachine(State: int, sensorvals: list, commands) -> int:
         # If anything goes wrong, transition to fault
         # Update curState
 
-        # Apply brakes:
-        for pin in RpiPinouts.brake_power_pins.values():
-            GPIO.output(pin, GPIO.HIGH) 
         # Turn off main power:
-        for pin in RpiPinouts.main_circuit_pins.values():
-            GPIO.output(pin, GPIO.LOW)
-        print("Braking")
+        RpiPinouts.main_power_off()
+        # Apply brakes:
+        RpiPinouts.deploy_brakes()
 
         if commands == "stop complete": 
             curState = SAFE         #once pod is fully stopped, go back to SAFE
+        
+        print(stateToStr[curState])
+
+        
    
     if curState == FAULT:
         # Fault stuff
         # Safe state the pod and send info dump to control station
         # Transition to safe state only when command is given from the control station
         
-        # Apply brakes: 
-        for pin in RpiPinouts.brake_power_pins.values():
-            GPIO.output(pin, GPIO.HIGH)
         # Turn off main circuit power:
-        for pin in RpiPinouts.main_circuit_pins.values():
-            GPIO.output(pin, GPIO.LOW)
-
-            # Question 2 - replace above code with curstate = braking?
+        RpiPinouts.main_power_off()
+        # Apply brakes: 
+        RpiPinouts.deploy_brakes()
 
         # Flash all LEDs to indicate fault:
         while commands != "reset fault":
-            for pin in RpiPinouts.led_pins.values():
-                GPIO.output(pin, GPIO.HIGH)
-            time.sleep(0.4)
-            for pin in RpiPinouts.led_pins.values():
-                GPIO.output(pin, GPIO.LOW)
-            time.sleep(0.4)
-        
-        print("Fault")
+            RpiPinouts.led_pins["LED 3"].blink()
 
         if commands == "reset fault":   
             curState = SAFE     #ending fault state, go back to SAFE
+        
+        print(stateToStr[curState])
 
     return curState
 
