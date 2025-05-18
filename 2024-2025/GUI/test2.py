@@ -7,6 +7,9 @@ from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QLabel, QV
 from PySide6.QtCore import Qt, QTimer, Signal, QObject
 from PySide6.QtGui import QPixmap
 
+HOST_IP = "192.168.x.x"
+TCP_PORT = 5000
+
 # Custom signal class for thread-safe communication
 class TCPSignals(QObject):
     data_received = Signal(list)
@@ -26,9 +29,9 @@ class HyperloopControlGUI(QMainWindow):
         self.tcp_signals.connection_status.connect(self.update_connection_status)
         
         # Server details
-        self.tcp_host = "192.168.x.x"  # Replace with your Pi's IP address
+        self.tcp_host = HOST_IP  # Replace with your Pi's IP address
         #self.tcp_host = "127.0.0.1"  # Default to localhost
-        self.tcp_port = 5000         # Default port
+        self.tcp_port = TCP_PORT         # Default port
         
         self.setWindowTitle("Pod Control")
         self.setGeometry(100, 100, 500, 600)  # Increased size for connection status
