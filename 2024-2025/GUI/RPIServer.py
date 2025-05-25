@@ -21,7 +21,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         # release commands lock, aquire sensor lock, write to self.wfile to send data to gui
         self.command_lock.release()
         self.sensor_lock.acquire()
-        with open("Pod Control/sensorvals.txt", "w") as s:
+        with open("Pod Control/sensorvals.txt", "r") as s:
             values = s.readline()
             self.wfile.write(values)
 
