@@ -9,29 +9,13 @@ from PySide6.QtGui import QPixmap
 
 HOST_IP = "192.168.x.x"
 TCP_PORT = 5000
-
-# Custom signal class for thread-safe communication
-class TCPSignals(QObject):
-    data_received = Signal(list)
-    connection_status = Signal(bool, str)
+D_LOCK = threading.Lock()
+C_LOCK = threading.Lock()
 
 class HyperloopControlGUI(QMainWindow):
 
     def __init__(self):
         super().__init__()
-
-        # TCP Client Configuration
-        self.tcp_client = None
-        self.tcp_thread = None
-        self.tcp_connected = False
-        self.tcp_signals = TCPSignals()
-        self.tcp_signals.data_received.connect(self.improveGUI)
-        self.tcp_signals.connection_status.connect(self.update_connection_status)
-        
-        # Server details
-        self.tcp_host = HOST_IP  # Replace with your Pi's IP address
-        #self.tcp_host = "127.0.0.1"  # Default to localhost
-        self.tcp_port = TCP_PORT         # Default port
         
         self.setWindowTitle("Pod Control")
         self.setGeometry(100, 100, 500, 600)  # Increased size for connection status
@@ -81,15 +65,6 @@ class HyperloopControlGUI(QMainWindow):
         self.stop_button = QPushButton("Stop")
         self.stop_button.setStyleSheet(red_button_style)
         self.stop_button.clicked.connect(self.on_stop)
-        
-        # TCP Connection button
-        self.connect_button = QPushButton("Connect TCP")
-        self.connect_button.setStyleSheet(blue_button_style)
-        self.connect_button.clicked.connect(self.toggle_tcp_connection)
-        
-        # Connection status
-        self.connection_status = QLabel("Not Connected")
-        self.connection_status.setStyleSheet("QLabel { color: red; font-weight: bold; }")
 
         # Hyperloop logo
         self.image_label = QLabel()
@@ -105,11 +80,8 @@ class HyperloopControlGUI(QMainWindow):
         # Add buttons to layout
         button_layout.addWidget(self.launch_button)
         button_layout.addWidget(self.stop_button)
-        button_layout.addWidget(self.connect_button)
         
         # Connection status layout
-        connection_layout.addWidget(QLabel("Connection Status:"))
-        connection_layout.addWidget(self.connection_status)
 
         # Displays for voltage and current
         self.bat1_display = QLabel("Battery 1:")
@@ -255,24 +227,17 @@ class HyperloopControlGUI(QMainWindow):
         main_layout.addLayout(inverter_layout)
         main_layout.addLayout(commandwindow_layout)
         central_widget.setLayout(main_layout)
-    
-    def update_connection_status(self, is_connected, message):
-        if is_connected:
-            self.connection_status.setText("Connected")
-            self.connection_status.setStyleSheet("QLabel { color: green; font-weight: bold; }")
-            self.connect_button.setText("Disconnect")
-        else:
-            self.connection_status.setText(message)
-            self.connection_status.setStyleSheet("QLabel { color: red; font-weight: bold; }")
-            self.connect_button.setText("Connect TCP")
-            self.tcp_connected = False
 
     def log_command(self, message):
         timestamp = time.strftime("%H:%M:%S", time.localtime())
         self.command_window.append(f"[{timestamp}] {message}")
 
-    def improveGUI(self, sensor_data):
+    def improveGUI(self):
         # input list
+        D_LOCK.acquire()
+        with open("GUI/data.txt", "r") as d:
+            data = d.read()
+        D_LOCK.release()
         try:
             (bat1_temp, bat1_volt, bat1_cur,
              bat2_temp, bat2_volt, bat2_cur,
@@ -281,7 +246,7 @@ class HyperloopControlGUI(QMainWindow):
              lim_temp, lim_volt, lim_cur,
              brake1_deployed, brake2_deployed,
              velocity, distance_traveled, state,
-             inverter_volt) = sensor_data  # New inverter voltage added
+             inverter_volt) = data  # New inverter voltage added
 
             # Update inverter voltage display
             self.inverter_voltage.setText(f"Voltage: {inverter_volt} V")
@@ -324,35 +289,31 @@ class HyperloopControlGUI(QMainWindow):
             self.log_command(f"Error updating GUI with received data: {str(e)}")
 
     def on_launch(self):
+        C_LOCK.acquire()
+        with open("GUI/commands.txt", "w") as c:
+            c.write("GO")
+        C_LOCK.release()
         self.log_command("Launch command sent")
-        if self.tcp_connected and self.tcp_client:
-            try:
-                self.tcp_client.send(json.dumps({"command": "launch"}).encode('utf-8'))
-            except Exception as e:
-                self.log_command(f"Error sending launch command: {str(e)}")
-        else:
-            self.log_command("Not connected to server - launch command not sent")
+        
 
     def on_stop(self):
+        C_LOCK.acquire()
+        with open("GUI/commands.txt", "w") as c:
+            c.write("STOP")
+        C_LOCK.release()
         self.log_command("Stop command sent")
-        if self.tcp_connected and self.tcp_client:
-            try:
-                self.tcp_client.send(json.dumps({"command": "stop"}).encode('utf-8'))
-            except Exception as e:
-                self.log_command(f"Error sending stop command: {str(e)}")
-        else:
-            self.log_command("Not connected to server - stop command not sent")
+        
 
     def closeEvent(self, event):
-        self.stop_tcp_client()
         super().closeEvent(event)
 
-def main():
+
+def main(data_lock: threading.Lock):
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
     window = HyperloopControlGUI()
     window.show()
-
+    D_LOCK = data_lock
     # Example data to update the GUI, including inverter voltage
     example_data = [
         25.0, 48.5, 10.2,  # Battery 1
@@ -365,9 +326,11 @@ def main():
         "Safe to Approach",  # State
         220.0                # Inverter voltage
     ]
-    window.improveGUI(example_data)
+    def update():
+        window.improveGUI()
+
+    timer = QTimer()
+    timer.timeout.connect(update)
+    timer.start(1000)
 
     sys.exit(app.exec())
-
-if __name__ == "__main__":
-    main()
