@@ -3,6 +3,7 @@ import serial
 import StateMachine
 import threading
 import RpiPinouts
+import GUI.RPIServer
 
 # Data Array Definitions
 BATVOLT = 0
@@ -24,18 +25,35 @@ RUNNING = 2
 BRAKING = 3
 FAULT = -1
 
-curState = SAFE
+# Raspberry Pi IP Info
+RPI_IP = ""
+RPI_PORT = 15000
 
-# Run startup tests here
-# Brake test
-RpiPinouts.brake_check()
+curState = SAFE
 
 # create mutex lock
 sensor_lock = threading.Lock()
 commands_lock = threading.Lock()
 
 # initialize connection thread
-# initialize state machine thread
-stateMachineThread = threading.Thread(StateMachine.main, sensor_lock, commands_lock)
-StateMachine.main()
-# initialize data input thread
+commsThread = threading.Thread(GUI.RPIServer.connection, commands_lock, sensor_lock, RPI_IP, RPI_PORT)
+commsThread.start()
+
+# Run startup tests here
+# Brake test
+
+if RpiPinouts.brake_check():
+    # initialize state machine thread
+    stateMachineThread = threading.Thread(StateMachine.main, sensor_lock, commands_lock)
+
+    # initialize data input thread
+
+    
+    stateMachineThread.start()
+
+    commsThread.join()
+    stateMachineThread.join()
+
+    print("POD CONTROL PROGRAM ENDED")
+else:
+    print("BRAKE CHECK FAILED")

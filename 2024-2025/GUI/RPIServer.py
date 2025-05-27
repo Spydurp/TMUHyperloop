@@ -13,7 +13,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
     def handle(self):
         # self.rfile: a file object containing the request from the client.
-        self.data = self.rfile.readline(100).rstrip() # read 100 bytes of data from the client (control station)
+        self.data = self.rfile.read().rstrip() # read 100 bytes of data from the client (control station)
         # aquire commands lock and write to commands file
         self.command_lock.acquire()
         with open("Pod Control/commands.txt", "w") as c:
@@ -22,10 +22,19 @@ class TCPHandler(socketserver.StreamRequestHandler):
         self.command_lock.release()
         self.sensor_lock.acquire()
         with open("Pod Control/sensorvals.txt", "r") as s:
-            values = s.readline()
+            values = s.read()
             self.wfile.write(values)
 
+class RpiServer(socketserver.TCPServer):
+    def __init__(self, server_address, RequestHandlerClass, bind_and_activate, command_lock: threading.Lock, sensor_lock: threading.Lock):
+        super().__init__(server_address, RequestHandlerClass, bind_and_activate)
+        self.command_lock = command_lock
+        self.sensor_lock = sensor_lock
+
+    def finish_request(self, request, client_address):
+        self.RequestHandlerClass(request, client_address, self, self.command_lock, self.sensor_lock)
+    
 
 def connection(command_lock, sensor_lock, Host, Port):
-    with socketserver.TCPServer((Host, Port), TCPHandler) as server:
+    with RpiServer((Host, Port), TCPHandler, True, command_lock, sensor_lock) as server:
         server.serve_forever()

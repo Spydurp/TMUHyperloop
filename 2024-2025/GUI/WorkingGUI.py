@@ -5,17 +5,19 @@ import json
 import time
 from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QLabel, QVBoxLayout, QHBoxLayout, QWidget, QSlider, QPlainTextEdit, QTextEdit, QMessageBox
 from PySide6.QtCore import Qt, QTimer, Signal, QObject
-from PySide6.QtGui import QPixmap
+from PySide6.QtGui import QPixmap, QImage
 
 HOST_IP = "192.168.x.x"
 TCP_PORT = 5000
-D_LOCK = threading.Lock()
-C_LOCK = threading.Lock()
+d_LOCK = threading.Lock()
+c_LOCK = threading.Lock()
 
 class HyperloopControlGUI(QMainWindow):
 
-    def __init__(self):
+    def __init__(self, d_lock: threading.Lock, c_lock: threading.Lock):
         super().__init__()
+        self.D_LOCK = d_lock
+        self.C_LOCK = c_lock
         
         self.setWindowTitle("Pod Control")
         self.setGeometry(100, 100, 500, 600)  # Increased size for connection status
@@ -28,6 +30,8 @@ class HyperloopControlGUI(QMainWindow):
 
         # Start and stop buttons side by side
         button_layout = QHBoxLayout()
+        button_layout2 = QHBoxLayout()
+        image_layout = QHBoxLayout()
         title_layout = QHBoxLayout()
         title_layout2 = QHBoxLayout()
         LIM_title_layout = QHBoxLayout()
@@ -46,8 +50,7 @@ class HyperloopControlGUI(QMainWindow):
         speedDisplay_layout = QHBoxLayout()
         pos_pressure_layout = QHBoxLayout()
         posPressureDisplay_layout = QHBoxLayout()
-        inverter_layout = QHBoxLayout()
-        connection_layout = QHBoxLayout()
+        inverter_layout = QVBoxLayout()
         commandwindow_layout = QVBoxLayout()
 
         # Style definitions
@@ -66,20 +69,40 @@ class HyperloopControlGUI(QMainWindow):
         self.stop_button.setStyleSheet(red_button_style)
         self.stop_button.clicked.connect(self.on_stop)
 
+        self.e_stop_button = QPushButton("STOP NOW")
+        self.e_stop_button.setStyleSheet(red_button_style)
+        self.e_stop_button.clicked.connect(self.on_e_stop)
+
+        self.ready_button = QPushButton("Prep for Launch")
+        self.ready_button.setStyleSheet(blue_button_style)
+        self.ready_button.clicked.connect(self.on_ready)
+
+        self.cancel_button = QPushButton("Abort Launch")
+        self.cancel_button.setStyleSheet(red_button_style)
+        self.cancel_button.clicked.connect(self.on_Cancel)
+
+        self.reset_fault_button = QPushButton("Reset Fault")
+        self.reset_fault_button.setStyleSheet(blue_button_style)
+        self.reset_fault_button.clicked.connect(self.on_fault_reset)
+
         # Hyperloop logo
         self.image_label = QLabel()
-        try:
-            image_path = "Hyperloop_logo_W.png"
-            pixmap = QPixmap(image_path)
-            self.image_label.setPixmap(pixmap)
-            self.image_label.setAlignment(Qt.AlignCenter)
-        except:
-            self.image_label.setText("Logo not found")
-            self.image_label.setAlignment(Qt.AlignCenter)
+        image_path = "2024-2025\GUI\miku.jpg"
+        pixmap = QPixmap()
+        pixmap.load(image_path)
+        self.image_label.setPixmap(pixmap)
+        self.image_label.setAlignment(Qt.AlignHCenter)
+    
+        image_layout.addWidget(self.image_label)
 
         # Add buttons to layout
+        button_layout.addWidget(self.ready_button)
+        button_layout.addWidget(self.cancel_button)
         button_layout.addWidget(self.launch_button)
-        button_layout.addWidget(self.stop_button)
+        
+        button_layout2.addWidget(self.stop_button)
+        button_layout2.addWidget(self.e_stop_button)
+        button_layout2.addWidget(self.reset_fault_button)
         
         # Connection status layout
 
@@ -198,10 +221,11 @@ class HyperloopControlGUI(QMainWindow):
         self.console_locals = {}
 
         # Add widgets to the layout
+        main_layout.addLayout(image_layout)
         main_layout.addLayout(button_layout)
-        main_layout.addLayout(connection_layout)
-        main_layout.addWidget(self.image_label)
-        main_layout.addLayout(title_layout) 
+        main_layout.addLayout(button_layout2)
+        
+        main_layout.addLayout(title_layout)
         main_layout.addLayout(bat1_2_vLayout)
         main_layout.addLayout(bat1_2_cLayout)
         main_layout.addLayout(bat1_2_tLayout)
@@ -234,10 +258,10 @@ class HyperloopControlGUI(QMainWindow):
 
     def improveGUI(self):
         # input list
-        D_LOCK.acquire()
-        with open("GUI/data.txt", "r") as d:
-            data = d.read()
-        D_LOCK.release()
+        self.D_LOCK.acquire()
+        with open("data.txt", "r") as d:
+            data = d.read().split(',')
+        self.D_LOCK.release()
         try:
             (bat1_temp, bat1_volt, bat1_cur,
              bat2_temp, bat2_volt, bat2_cur,
@@ -289,33 +313,58 @@ class HyperloopControlGUI(QMainWindow):
             self.log_command(f"Error updating GUI with received data: {str(e)}")
 
     def on_launch(self):
-        C_LOCK.acquire()
-        with open("GUI/commands.txt", "w") as c:
+        self.C_LOCK.acquire()
+        with open("commands.txt", "w") as c:
             c.write("GO")
-        C_LOCK.release()
+        self.C_LOCK.release()
         self.log_command("Launch command sent")
         
-
     def on_stop(self):
-        C_LOCK.acquire()
-        with open("GUI/commands.txt", "w") as c:
+        self.C_LOCK.acquire()
+        with open("commands.txt", "w") as c:
             c.write("STOP")
-        C_LOCK.release()
+        self.C_LOCK.release()
         self.log_command("Stop command sent")
-        
+    
+    def on_e_stop(self): # link to STOP NOW button
+        self.C_LOCK.acquire()
+        with open("commands.txt", "w") as c:
+            c.write("STOP_NOW")
+        self.C_LOCK.release()
+        self.log_command("E-STOP")
+    
+    def on_ready(self): # Link to ready button
+        self.C_LOCK.acquire()
+        with open("commands.txt", "w") as c:
+            c.write("READY")
+        self.C_LOCK.release()
+        self.log_command("Prep launch command sent")
+    
+    def on_Cancel(self): # link to abort launch button
+        self.C_LOCK.acquire()
+        with open("commands.txt", "w") as c:
+            c.write("ABORT")
+        self.C_LOCK.release()
+        self.log_command("Cancel launch command sent")
+    
+    def on_fault_reset(self): # link to reset fault button
+        self.C_LOCK.acquire()
+        with open("commands.txt", "w") as c:
+            c.write("RESET_FAULT")
+        self.C_LOCK.release()
+        self.log_command("Fault reset command sent")
 
     def closeEvent(self, event):
         super().closeEvent(event)
 
 
-def main(data_lock: threading.Lock):
+def main(data_lock: threading.Lock, commands_lock: threading.Lock):
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
-    window = HyperloopControlGUI()
+    window = HyperloopControlGUI(data_lock, commands_lock)
     window.show()
-    D_LOCK = data_lock
     # Example data to update the GUI, including inverter voltage
-    example_data = [
+    '''    example_data = [
         25.0, 48.5, 10.2,  # Battery 1
         26.5, 48.1, 10.0,  # Battery 2
         27.0, 48.7, 10.5,  # Battery 3
@@ -326,6 +375,7 @@ def main(data_lock: threading.Lock):
         "Safe to Approach",  # State
         220.0                # Inverter voltage
     ]
+    '''
     def update():
         window.improveGUI()
 
@@ -334,3 +384,6 @@ def main(data_lock: threading.Lock):
     timer.start(1000)
 
     sys.exit(app.exec())
+
+if __name__ == "__main__":
+    main(threading.Lock(), threading.Lock())

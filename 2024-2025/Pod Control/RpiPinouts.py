@@ -23,18 +23,19 @@ led_pins = {
     "LED 3": gpiozero.LED(19)  # Red
 }
 
-brake_power_pins = {
+brake_control_pins = { # may be able to reassign all these to 1 pin, or even no pins using the USB.
     "Brake Control S1": gpiozero.OutputDevice(16),
     "Brake Control S2": gpiozero.OutputDevice(20),
     "Brake Control S3": gpiozero.OutputDevice(21),
-    "Brake Control S4": gpiozero.OutputDevice(18) 
+    "Brake Control S4": gpiozero.OutputDevice(18)
 }
+
+e_brake = gpiozero.OutputDevice(15)
 
 vfd_pin = gpiozero.OutputDevice(26)
 
 main_circuit_pins = {
     "Main Switch" : gpiozero.OutputDevice(14),
-    "VFD Switch 1" : gpiozero.OutputDevice(15),
     "VFD Switch 2" : gpiozero.OutputDevice(2)
 }
 
@@ -95,14 +96,14 @@ def retract_brakes() -> bool:
 
 def main_power_on() -> None:
     main_circuit_pins["Main Switch"].on()
-    main_circuit_pins["VFD Switch 1"].on()
     main_circuit_pins["VFD Switch 2"].on()
 
 def main_power_off() -> None:
     main_circuit_pins["Main Switch"].off()
-    main_circuit_pins["VFD Switch 1"].off()
     main_circuit_pins["VFD Switch 2"].off()
 
 def LIM_run() -> None:
     vfd_pin.on()
 
+def loadEBrake() -> None:
+    e_brake.on()
