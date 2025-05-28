@@ -1,6 +1,8 @@
 import threading
-import RPi.GPIO as GPIO
+import gpiozero
 import RpiPinouts
+from PySide6.QtCore import QTimer
+
 
 # Data Array Definitions
 BATVOLT = 0
@@ -22,6 +24,21 @@ RUNNING = 2
 BRAKING = 3
 FAULT = -1
 
+stateToStr = {
+    SAFE : "Safe to Approach",
+    LAUNCH_READY: "Ready to Launch",
+    RUNNING : "Running",
+    BRAKING : "Braking",
+    FAULT : "Fault"
+}
+
+current_state = SAFE
+
+def update_state():
+    with open("2024-2025\Pod Control\sensorvals.txt", "r+") as sensorvals:
+        data = sensorvals.read().split(',')
+        data[19] = stateToStr[current_state]
+
 def StateMachine(State: int, sensorvals: list, commands) -> int:
     curState = State
     if curState == SAFE:
@@ -30,71 +47,124 @@ def StateMachine(State: int, sensorvals: list, commands) -> int:
         # If anything goes wrong, transition to fault
         # Update curState
 
-        # Run Brake Check function
-        # Set Brake Pins to Low
-        for pin in RpiPinouts.brake_power_pins.values():
-            GPIO.output(pin, GPIO.LOW)
-        # ...
+        # deploy brakes
+        RpiPinouts.deploy_brakes()
 
-        if commands == "prep launch":
-            # deploy brakes
-            GPIO.output(RpiPinouts.brake_power_pins["Brake Control S1"], GPIO.HIGH)
-            GPIO.output(RpiPinouts.brake_power_pins["Brake Control S2"], GPIO.HIGH)
-            GPIO.output(RpiPinouts.brake_power_pins["Brake Control S3"], GPIO.HIGH)
-            GPIO.output(RpiPinouts.brake_power_pins["Brake Control S4"], GPIO.HIGH)
+        # Main circuit power off:
+        RpiPinouts.main_power_off()
 
+        if commands == "READY":
             # Set main power pins to high
-            for pin in RpiPinouts.main_circuit_pins.values():
-                GPIO.output(pin, GPIO.HIGH)
-            
+            RpiPinouts.main_power_on()
+            curState = LAUNCH_READY  
+        if commands == "STOP_NOW":
+            curState = FAULT        
 
-        print("Safe to approach")
     if curState == LAUNCH_READY:
         # Ready to launch stuff
+
+        #keep brakes applied during ready state:
+        RpiPinouts.deploy_brakes()
+
         # If commands are received from station and sensorvals are ok, run launch function
-        # If anything goes wrong, transition to fault
-        # Update curState
-        print("Ready to Launch")
+        if commands == "GO":
+            # Release Brakes
+            RpiPinouts.retract_brakes()
+            #close main circuit switches
+            RpiPinouts.main_power_on()
+
+            RpiPinouts.LIM_run() # close switch that tells lim to actually start
+
+            # update to running
+            curState = RUNNING
+        
+        # if launch is canceld, go back to safe state
+        if commands == "ABORT":
+            RpiPinouts.deploy_brakes()
+            RpiPinouts.main_power_off()
+            curState = SAFE
+        if commands == "STOP_NOW":
+            curState = FAULT
+                      
     if curState == RUNNING:
         # Running stuff
         # If commands are received from station and sensorvals are ok, or when sensorvals exceed any set limit, run brake function
-        # If anything goes wrong, transition to fault
-        # Update curState
-        print("Running")
+        # If anything goes wrong, transition to fault               
+
+        #keep main power on:
+        RpiPinouts.main_power_on()
+        #keep brakes released:
+        RpiPinouts.retract_brakes()
+        
+
+        if commands == "STOP":
+            RpiPinouts.main_power_off()
+            RpiPinouts.deploy_brakes()
+            curState = BRAKING   # If command says brake, move to BRAKING
+        if commands == "STOP_NOW":
+            curState = FAULT
+
     if curState == BRAKING:
         # Braking stuff
         # If once pod reaches a full stop, run safe functions
         # If anything goes wrong, transition to fault
         # Update curState
-        print("Braking")
+
+        # Turn off main power:
+        RpiPinouts.main_power_off()
+        # Apply brakes:
+        RpiPinouts.deploy_brakes()
+        
+        #once pod is fully stopped, go back to SAFE
+        timer = threading.Timer(10, make_safe) # Might not work
+        timer.start()
+        def make_safe():
+            global current_state
+            if current_state == BRAKING:
+                current_state = SAFE
+            timer.cancel()
+
+        if commands == "STOP_NOW":
+            curState = FAULT
+
     if curState == FAULT:
         # Fault stuff
         # Safe state the pod and send info dump to control station
         # Transition to safe state only when command is given from the control station
-        print("Fault")
+        
+        # Turn off main circuit power:
+        RpiPinouts.main_power_off()
+        # Apply brakes: 
+        RpiPinouts.deploy_brakes()
 
-    
+        while commands != "RESET_FAULT":
+            RpiPinouts.led_pins["LED 3"].blink()
+
+        if commands == "RESET_FAULT":   
+            curState = SAFE     #ending fault state, go back to SAFE
+        
+    print(stateToStr[curState])
+
     return curState
 
-current_state = SAFE
-
 def main(sensor_lock: threading.Lock, commands_lock: threading.Lock):
-    commandsFile = open("2024-2025\Pod Control\commands.txt", "r")
-    sensorvals = open("2024-2025\Pod Control\sensorvals.txt", "r")
-    RpiPinouts.pin_init()
+
     while True:
         # access sensor data file
         # insert read function for data file
-        sensor_lock.acquire()
-        with sensor_lock:
-            sensor_data = sensorvals.read()
+        if sensor_lock.acquire():
+            update_state()
+            with open("2024-2025\Pod Control\sensorvals.txt", "r") as sensorvals:
+                sensor_data = sensorvals.read()
         sensor_lock.release()
+        # put sensor data in an array before using when we finally implement this part
 
         # access Commands file
         # insert read function for commands file
-        commands_lock.acquire()
-        with commands_lock:
-            commands = commandsFile.read()
+        if commands_lock.acquire():
+            with open("2024-2025\Pod Control\commands.txt", "r") as commandsFile:
+                commands = commandsFile.read()
         commands_lock.release()
         
         current_state = StateMachine(current_state, sensor_data, commands)
+    
