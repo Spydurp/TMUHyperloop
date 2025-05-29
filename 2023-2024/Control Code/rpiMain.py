@@ -73,7 +73,6 @@ while True:
                 s.sendall(bytes(data, 'utf-8'))
                 com_in = s.recv(1024).decode('utf-8')
                 print(f"Received {data!r}")
-                
                 # Parse command inputs
                 commands = com_in.split(" ")
                 commandSize = len(commands)

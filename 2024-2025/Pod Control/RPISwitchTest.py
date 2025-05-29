@@ -1,11 +1,14 @@
 from gpiozero import LED
 import time
-import RpiPinouts
 
-while True:
-    RpiPinouts.fans_on()
-    print("on")
-    time.sleep(5)
-    RpiPinouts.fans_off()
-    print("off")
-    time.sleep(5)
+led = LED(3)
+led.on()
+
+
+count = 0
+while count < 100:
+    led.off()
+    time.sleep(10)
+    led.on()
+    time.sleep(10)
+    count += 1

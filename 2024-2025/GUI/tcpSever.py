@@ -6,7 +6,6 @@ import random
 import argparse
 
 class HyperloopTCPServer:
-    #def __init__(self, host='127.0.0.1', port=5000):
     def __init__(self, host='0.0.0.0', port=5000):
         self.host = host
         self.port = port
@@ -266,32 +265,3 @@ class HyperloopTCPServer:
         # Cut power to LIM
         self.lim_volt = 0.0
         self.lim_cur = 0.
-    
-
-    def run_simulation(self):
-        """Simulate pod motion and update state periodically."""
-        while self.running:
-            current_time = time.time()
-            elapsed_time = current_time - self.last_update_time
-            self.last_update_time = current_time
-
-            if self.is_accelerating:
-                self.velocity = min(self.velocity + self.acceleration * elapsed_time, self.max_velocity)
-                self.distance_traveled += self.velocity * elapsed_time
-                if self.velocity >= self.max_velocity:
-                    self.is_accelerating = False
-                    self.is_decelerating = True  # Transition to deceleration
-
-            elif self.is_decelerating:
-                self.velocity = max(self.velocity - self.deceleration * elapsed_time, 0)
-                self.distance_traveled += self.velocity * elapsed_time
-                if self.velocity <= 0:
-                    self.is_decelerating = False
-                    self.state = "Safe to Approach"
-
-            self.send_state_to_all_clients()
-            time.sleep(0.5)  # Adjust frequency of updates
-
-if __name__ == "__main__":
-    server = HyperloopTCPServer(host='0.0.0.0')
-    server.start()

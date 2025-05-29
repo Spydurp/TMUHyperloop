@@ -2,7 +2,7 @@ import WorkingGUI
 import threading
 import GUI_Connection
 
-RPI_IP = "192.168.0.120"
+RPI_IP = ""
 RPI_PORT = 15000
 C_LOCK = threading.Lock()
 D_LOCK = threading.Lock()
