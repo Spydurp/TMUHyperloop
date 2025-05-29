@@ -3,6 +3,8 @@ import threading
 
 # Raspberry pi connection code
 # TCP connection, server side
+COMMANDS_FILE = "/home/hyperlooop/Desktop/Hyperloop/TMUHyperloop/2024-2025/Pod Control/commands.txt"
+SENSOR_FILE = "/home/hyperlooop/Desktop/Hyperloop/TMUHyperloop/2024-2025/Pod Control/sensorvals.txt"
 
 class TCPHandler(socketserver.StreamRequestHandler):
     # Request handler for the server. instantiated once per connection to server, must override the handle() method
@@ -16,12 +18,12 @@ class TCPHandler(socketserver.StreamRequestHandler):
         self.data = self.rfile.read().rstrip() # read 100 bytes of data from the client (control station)
         # aquire commands lock and write to commands file
         self.command_lock.acquire()
-        with open("Pod Control/commands.txt", "w") as c:
+        with open(COMMANDS_FILE, "w") as c:
             c.write(self.data.decode("utf-8"))
         # release commands lock, aquire sensor lock, write to self.wfile to send data to gui
         self.command_lock.release()
         self.sensor_lock.acquire()
-        with open("Pod Control/sensorvals.txt", "r") as s:
+        with open(SENSOR_FILE, "r") as s:
             values = s.read()
             self.wfile.write(values)
 
