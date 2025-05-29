@@ -19,6 +19,8 @@ RUNNING = 2
 BRAKING = 3
 FAULT = -1
 
+current_state = 0
+
 def StateMachine(State: int, sensorvals: list, commands) -> int:
     curState = State
     if curState == SAFE:
@@ -53,3 +55,11 @@ def StateMachine(State: int, sensorvals: list, commands) -> int:
 
     
     return curState
+
+def main():
+    while True:
+        # Get commands and sensor data from shared file with comms thread and sensor data thread
+        sensorvals = {} # insert read function here
+        commands = {} # insert command read function here
+        # set the current state
+        current_state = StateMachine(current_state, sensorvals, commands)

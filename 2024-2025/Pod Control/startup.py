@@ -27,7 +27,10 @@ curState = 0
 # Run startup tests here
 # Brake test
 
+# use a mutex object to ensure only 1 thread accesses a resource at a time
+# pass mutex object into each thread
+
 # initialize connection thread
 # initialize state machine thread
-StateMachine.StateMachine()
+StateMachine.main()
 # initialize data input thread
