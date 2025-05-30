@@ -26,6 +26,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         with open(SENSOR_FILE, "r") as s:
             values = s.read()
             self.wfile.write(values)
+            print("sent_vals")
 
 class RpiServer(socketserver.TCPServer):
     def __init__(self, server_address, RequestHandlerClass, bind_and_activate, command_lock: threading.Lock, sensor_lock: threading.Lock):

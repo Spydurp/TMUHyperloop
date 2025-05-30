@@ -9,8 +9,10 @@ from PySide6.QtGui import QPixmap, QImage
 
 HOST_IP = "192.168.x.x"
 TCP_PORT = 5000
-d_LOCK = threading.Lock()
-c_LOCK = threading.Lock()
+CMD_FILE = "C:/Users/ankar/OneDrive/Desktop/GNC/Hyperloop/TMUHyperloop/2024-2025/GUI/commands.txt"
+DATA_FILE = "C:/Users/ankar/OneDrive/Desktop/GNC/Hyperloop/TMUHyperloop/2024-2025/GUI/data.txt"
+#d_LOCK = threading.Lock()
+#c_LOCK = threading.Lock()
 
 class HyperloopControlGUI(QMainWindow):
 
@@ -259,7 +261,7 @@ class HyperloopControlGUI(QMainWindow):
     def improveGUI(self):
         # input list
         self.D_LOCK.acquire()
-        with open("data.txt", "r") as d:
+        with open(DATA_FILE, "r") as d:
             data = d.read().split(',')
         self.D_LOCK.release()
         try:
@@ -314,42 +316,42 @@ class HyperloopControlGUI(QMainWindow):
 
     def on_launch(self):
         self.C_LOCK.acquire()
-        with open("commands.txt", "w") as c:
+        with open(CMD_FILE, "w") as c:
             c.write("GO")
         self.C_LOCK.release()
         self.log_command("Launch command sent")
         
     def on_stop(self):
         self.C_LOCK.acquire()
-        with open("commands.txt", "w") as c:
+        with open(CMD_FILE, "w") as c:
             c.write("STOP")
         self.C_LOCK.release()
         self.log_command("Stop command sent")
     
     def on_e_stop(self): # link to STOP NOW button
         self.C_LOCK.acquire()
-        with open("commands.txt", "w") as c:
+        with open(CMD_FILE, "w") as c:
             c.write("STOP_NOW")
         self.C_LOCK.release()
         self.log_command("E-STOP")
     
     def on_ready(self): # Link to ready button
         self.C_LOCK.acquire()
-        with open("commands.txt", "w") as c:
+        with open(CMD_FILE, "w") as c:
             c.write("READY")
         self.C_LOCK.release()
         self.log_command("Prep launch command sent")
     
     def on_Cancel(self): # link to abort launch button
         self.C_LOCK.acquire()
-        with open("commands.txt", "w") as c:
+        with open(CMD_FILE, "w") as c:
             c.write("ABORT")
         self.C_LOCK.release()
         self.log_command("Cancel launch command sent")
     
     def on_fault_reset(self): # link to reset fault button
         self.C_LOCK.acquire()
-        with open("commands.txt", "w") as c:
+        with open(CMD_FILE, "w") as c:
             c.write("RESET_FAULT")
         self.C_LOCK.release()
         self.log_command("Fault reset command sent")
