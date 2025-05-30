@@ -40,6 +40,14 @@ def update_state():
     with open(SENSOR_FILE, "r") as sensorvals:
         data = sensorvals.read().split(',')
         data[19] = stateToStr[current_state]
+        if RpiPinouts.brakeLeftStatus:
+            data[15] = "True"
+        else:
+            data[15] = "False"
+        if RpiPinouts.brakeRigthStatus():
+            data[16] = "True"
+        else:
+            data[16] = "False"
     with open(SENSOR_FILE, "w") as sensorvals:
         s = ""
         i = 0
