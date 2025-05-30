@@ -1,6 +1,7 @@
 import threading
 import gpiozero
 import RpiPinouts
+import time
 
 COMMANDS_FILE = "/home/hyperlooop/Desktop/Hyperloop/TMUHyperloop/2024-2025/Pod Control/commands.txt"
 SENSOR_FILE = "/home/hyperlooop/Desktop/Hyperloop/TMUHyperloop/2024-2025/Pod Control/sensorvals.txt"
@@ -36,12 +37,16 @@ stateToStr = {
 current_state = SAFE
 
 def update_state():
-    with open(SENSOR_FILE, "r+") as sensorvals:
+    with open(SENSOR_FILE, "r") as sensorvals:
         data = sensorvals.read().split(',')
         data[19] = stateToStr[current_state]
+    with open(SENSOR_FILE, "w") as sensorvals:
         s = ""
-        for i in data:
-            s = s + i + ","
+        i = 0
+        while i < len(data)-1:
+            s = s + data[i] + ","
+            i += 1
+        s = s + data[i]
         sensorvals.write(s)
 
 def StateMachine(State: int, sensorvals: list, commands) -> int:
@@ -149,7 +154,7 @@ def StateMachine(State: int, sensorvals: list, commands) -> int:
         if commands == "RESET_FAULT":   
             curState = SAFE     #ending fault state, go back to SAFE
         
-    print(stateToStr[curState])
+    #print(stateToStr[curState])
 
     return curState
 
@@ -158,6 +163,7 @@ def main(sensor_lock: threading.Lock, commands_lock: threading.Lock):
     while True:
         # access sensor data file
         # insert read function for data file
+        
         if sensor_lock.acquire():
             update_state()
             with open("/home/hyperlooop/Desktop/Hyperloop/TMUHyperloop/2024-2025/Pod Control/sensorvals.txt", "r") as sensorvals:
@@ -173,4 +179,5 @@ def main(sensor_lock: threading.Lock, commands_lock: threading.Lock):
         commands_lock.release()
     
         current_state = StateMachine(current_state, sensor_data, commands)
+        time.sleep(0.1)
     
