@@ -40,6 +40,7 @@ def update_state():
     with open(SENSOR_FILE, "r") as sensorvals:
         data = sensorvals.read().split(',')
         data[19] = stateToStr[current_state]
+        #print(data[19])
         if RpiPinouts.brakeLeftStatus:
             data[15] = "True"
         else:
@@ -69,7 +70,6 @@ def StateMachine(State: int, sensorvals: list, commands) -> int:
         RpiPinouts.main_power_off()
         
         # deploy brakes
-        RpiPinouts.deploy_brakes()
 
         if commands == "READY":
             # Set main power pins to high
@@ -82,17 +82,18 @@ def StateMachine(State: int, sensorvals: list, commands) -> int:
         # Ready to launch stuff
 
         #keep brakes applied during ready state:
-        RpiPinouts.deploy_brakes()
+        #RpiPinouts.deploy_brakes()
 
         # If commands are received from station and sensorvals are ok, run launch function
         if commands == "GO":
             # Release Brakes
             RpiPinouts.retract_brakes()
             #close main circuit switches
+            time.sleep(5)
+            print("brakes retracted")
             RpiPinouts.main_power_on()
 
             RpiPinouts.LIM_run() # close switch that tells lim to actually start
-
             # update to running
             curState = RUNNING
         
@@ -112,13 +113,21 @@ def StateMachine(State: int, sensorvals: list, commands) -> int:
         #keep main power on:
         RpiPinouts.main_power_on()
         #keep brakes released:
-        RpiPinouts.retract_brakes()
+        #RpiPinouts.retract_brakes()
         
 
         if commands == "STOP":
             RpiPinouts.LIM_off()
             RpiPinouts.main_power_off()
             RpiPinouts.deploy_brakes()
+            #once pod is fully stopped, go back to SAFE
+            timer = threading.Timer(10, make_safe) # Might not work
+            timer.start()
+            def make_safe():
+                global current_state
+                if current_state == BRAKING:
+                    current_state = SAFE
+                timer.cancel()
             curState = BRAKING   # If command says brake, move to BRAKING
         if commands == "STOP_NOW":
             curState = FAULT
@@ -134,14 +143,7 @@ def StateMachine(State: int, sensorvals: list, commands) -> int:
         # Apply brakes:
         RpiPinouts.deploy_brakes()
         
-        #once pod is fully stopped, go back to SAFE
-        timer = threading.Timer(10, make_safe) # Might not work
-        timer.start()
-        def make_safe():
-            global current_state
-            if current_state == BRAKING:
-                current_state = SAFE
-            timer.cancel()
+        
 
         if commands == "STOP_NOW":
             curState = FAULT

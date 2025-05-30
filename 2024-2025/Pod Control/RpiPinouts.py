@@ -60,14 +60,12 @@ def retract_brakes() -> bool:
     brake_control_pins["Brake Control S1"].off()
     brake_control_pins["Brake Control S2"].off()
 
-    while not brake_sensors["Brake 1 (R)"].is_active and not brake_sensors["Brake 2 (R)"].is_active:
-        time.sleep(0.5)
-    
     return True
 
 def main_power_on() -> None:
     main_circuit_pins["Main Switch"].on()
     main_circuit_pins["VFD Switch 2"].on()
+    print("main_power On")
 
 def main_power_off() -> None:
     main_circuit_pins["Main Switch"].off()
@@ -75,6 +73,7 @@ def main_power_off() -> None:
 
 def LIM_run() -> None:
     vfd_pin.on()
+    print("LIM running")
 
 def LIM_off() -> None:
     vfd_pin.off()

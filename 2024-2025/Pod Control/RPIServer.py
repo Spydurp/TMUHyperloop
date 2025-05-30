@@ -56,7 +56,7 @@ def connection(command_lock: threading.Lock, sensor_lock: threading.Lock, Host, 
         # receive data stream. it won't accept data packet greater than 1024 bytes
         data = conn.recv(1024).decode().strip()
         if data:
-            print(data + " cmd")
+            #print(data + " cmd") 
             command_lock.acquire()
             with open(COMMANDS_FILE, "w") as c:
                 c.write(data)

@@ -41,7 +41,7 @@ commsThread.start()
 
 # Run startup tests here
 # Brake test
-#RpiPinouts.fans_on()
+RpiPinouts.fans_on()
 # initialize state machine thread
 stateMachineThread = threading.Thread(None, StateMachine.main, "StateMachineThread",(sensor_lock, commands_lock))
 
