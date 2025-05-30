@@ -47,8 +47,8 @@ def brake_check() -> bool:
 '''
 def deploy_brakes() -> bool:
 
-    brake_control_pins["Brake Control S1"].off()
-    brake_control_pins["Brake Control S2"].off()
+    brake_control_pins["Brake Control S1"].on()
+    brake_control_pins["Brake Control S2"].on()
     time.sleep(0.5)
     if not brake_sensors["Brake 1 (R)"].is_active and not brake_sensors["Brake 2 (R)"].is_active:
         return True
@@ -57,8 +57,8 @@ def deploy_brakes() -> bool:
 
 def retract_brakes() -> bool:
     
-    brake_control_pins["Brake Control S1"].on()
-    brake_control_pins["Brake Control S2"].on()
+    brake_control_pins["Brake Control S1"].off()
+    brake_control_pins["Brake Control S2"].off()
 
     while not brake_sensors["Brake 1 (R)"].is_active and not brake_sensors["Brake 2 (R)"].is_active:
         time.sleep(0.5)
@@ -90,7 +90,7 @@ def brakeLeftStatus() -> bool:
         return False
     return True
 
-def brakeRigthStatus() -> bool:
+def brakeRightStatus() -> bool:
     if brake_sensors["Brake 2 (R)"].is_active:
         return False
     return True

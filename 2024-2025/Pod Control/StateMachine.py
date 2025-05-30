@@ -44,7 +44,7 @@ def update_state():
             data[15] = "True"
         else:
             data[15] = "False"
-        if RpiPinouts.brakeRigthStatus():
+        if RpiPinouts.brakeRightStatus():
             data[16] = "True"
         else:
             data[16] = "False"
