@@ -50,7 +50,7 @@ def deploy_brakes() -> bool:
     brake_control_pins["Brake Control S1"].off()
     brake_control_pins["Brake Control S2"].off()
     time.sleep(0.5)
-    if brake_sensors["Brake 1 (D)"].is_active and brake_sensors["Brake 2 (D)"].is_active:
+    if not brake_sensors["Brake 1 (R)"].is_active and not brake_sensors["Brake 2 (R)"].is_active:
         return True
     
     return False
