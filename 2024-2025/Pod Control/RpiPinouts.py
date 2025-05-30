@@ -84,3 +84,13 @@ def fans_on() -> None: # relays work off inverted inputs
 
 def fans_off() -> None:
     fans.on()
+
+def brakeLeftStatus() -> bool:
+    if brake_sensors["Brake 1 (R)"].is_active:
+        return False
+    return True
+
+def brakeRigthStatus() -> bool:
+    if brake_sensors["Brake 2 (R)"].is_active:
+        return False
+    return True
