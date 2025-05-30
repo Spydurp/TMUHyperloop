@@ -5,7 +5,7 @@ import json
 import time
 from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QLabel, QVBoxLayout, QHBoxLayout, QWidget, QSlider, QPlainTextEdit, QTextEdit, QMessageBox
 from PySide6.QtCore import Qt, QTimer, Signal, QObject
-from PySide6.QtGui import QPixmap, QImage
+from PySide6.QtGui import QPixmap, QImage, QFont
 
 HOST_IP = "192.168.x.x"
 TCP_PORT = 5000
@@ -61,6 +61,7 @@ class HyperloopControlGUI(QMainWindow):
         red_button_style = button_style + " QPushButton { background-color: #E11313; color: white; }"
         blue_button_style = button_style + " QPushButton { background-color: #2196F3; color: white; }"
         display_style = "QLabel { border: 1px solid gray; background-color: #1E1E1E; color: white; padding: 5px; }"
+        state_style = "QLabel { border: 1px solit gray; background-color: #1E1E1E; color: white: padding: 5px; font: 18pt; }"
         
         # Control buttons
         self.launch_button = QPushButton("Launch")
@@ -187,6 +188,7 @@ class HyperloopControlGUI(QMainWindow):
         self.stateDisplay = QLabel("Current State:")
         self.state = QLabel("Safe to Approach")
         self.state.setStyleSheet(display_style)
+        self.state.setFont(QFont("Arial", 18))
 
         state_title_layout.addWidget(self.stateDisplay)
         state_layout.addWidget(self.state)
@@ -226,25 +228,24 @@ class HyperloopControlGUI(QMainWindow):
         main_layout.addLayout(image_layout)
         main_layout.addLayout(button_layout)
         main_layout.addLayout(button_layout2)
+        main_layout.addLayout(state_title_layout)
+        main_layout.addLayout(state_layout)
         
-        main_layout.addLayout(title_layout)
-        main_layout.addLayout(bat1_2_vLayout)
-        main_layout.addLayout(bat1_2_cLayout)
-        main_layout.addLayout(bat1_2_tLayout)
+        #main_layout.addLayout(title_layout)
+        #main_layout.addLayout(bat1_2_vLayout)
+        #main_layout.addLayout(bat1_2_cLayout)
+        #main_layout.addLayout(bat1_2_tLayout)
 
-        main_layout.addLayout(title_layout2)
-        main_layout.addLayout(bat3_4_vLayout)
-        main_layout.addLayout(bat3_4_cLayout)
-        main_layout.addLayout(bat3_4_tLayout)
+        #main_layout.addLayout(title_layout2)
+        #main_layout.addLayout(bat3_4_vLayout)
+        #main_layout.addLayout(bat3_4_cLayout)
+        #main_layout.addLayout(bat3_4_tLayout)
 
         main_layout.addLayout(LIM_title_layout)
         main_layout.addLayout(LIM_Layout)
 
         main_layout.addLayout(brake_title_layout)
         main_layout.addLayout(brake_layout)
-
-        main_layout.addLayout(state_title_layout)
-        main_layout.addLayout(state_layout)
 
         main_layout.addLayout(speed_layout)
         main_layout.addLayout(speedDisplay_layout)
