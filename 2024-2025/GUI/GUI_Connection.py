@@ -1,8 +1,8 @@
 import threading
 import socket
 import time
-CMD_FILE = "C:/Users/ankar/OneDrive/Desktop/GNC/Hyperloop/TMUHyperloop/2024-2025/GUI/commands.txt"
-DATA_FILE = "C:/Users/ankar/OneDrive/Desktop/GNC/Hyperloop/TMUHyperloop/2024-2025/GUI/data.txt"
+CMD_FILE = "C:/Users/user/Documents/Coding Projects/GUI/TMUHyperloop/2024-2025/GUI/commands.txt"
+DATA_FILE = "C:/Users/user/Documents/Coding Projects/GUI/TMUHyperloop/2024-2025/GUI/data.txt"
 # Control Station GUI Backend code (running on laptop)
 
 def connect(HOST, PORT, command_lock: threading.Lock, data_lock: threading.Lock):
