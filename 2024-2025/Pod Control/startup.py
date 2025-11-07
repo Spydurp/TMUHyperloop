@@ -2,6 +2,8 @@ import time
 import serial
 import StateMachine
 import threading
+import RpiPinouts
+import RPIServer
 
 # Data Array Definitions
 BATVOLT = 0
@@ -23,17 +25,32 @@ RUNNING = 2
 BRAKING = 3
 FAULT = -1
 
-curState = SAFE
+# Raspberry Pi IP Info
+RPI_IP = "192.168.0.120" # On Hyperloop wifi
+RPI_PORT = 15000
 
-# Run startup tests here
-# Brake test
+curState = SAFE
 
 # create mutex lock
 sensor_lock = threading.Lock()
 commands_lock = threading.Lock()
 
 # initialize connection thread
+commsThread = threading.Thread(None, RPIServer.connection, "connectionThread",(commands_lock, sensor_lock, RPI_IP, RPI_PORT))
+commsThread.start()
+
+# Run startup tests here
+# Brake test
+RpiPinouts.fans_on()
 # initialize state machine thread
-stateMachineThread = threading.Thread(StateMachine.main, sensor_lock, commands_lock)
-StateMachine.main()
-# initialize data input thread
+stateMachineThread = threading.Thread(None, StateMachine.main, "StateMachineThread",(sensor_lock, commands_lock))
+
+# initialize data input thread (for later implementation)
+
+
+stateMachineThread.start()
+
+commsThread.join()
+stateMachineThread.join()
+RpiPinouts.fans_off()
+print("POD CONTROL PROGRAM ENDED")

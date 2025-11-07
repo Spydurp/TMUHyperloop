@@ -9,7 +9,7 @@ class HyperloopControlGUI(QMainWindow):
         super().__init__()
 
         self.setWindowTitle("Pod Control")
-        self.setGeometry(100, 100, 400, 400)
+        self.setGeometry(100, 100, 400, 500)  # Increased height for the new voltage display
 
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
@@ -37,6 +37,7 @@ class HyperloopControlGUI(QMainWindow):
         speedDisplay_layout = QHBoxLayout()
         pos_pressure_layout = QHBoxLayout()
         posPressureDisplay_layout = QHBoxLayout()
+        inverter_layout = QHBoxLayout()  # New layout for inverter voltage
         commandwindow_layout = QVBoxLayout()
 
         style = "QPushButton { background-color: #1E8939; color: white; }"
@@ -142,19 +143,26 @@ class HyperloopControlGUI(QMainWindow):
         state_title_layout.addWidget(self.stateDisplay)
         state_layout.addWidget(self.state)
 
-        #Other Stuff
-        self.current_speed = QLabel("Current Speed")
+        # Other Stuff
+        self.velocity = QLabel("Velocity")
         self.CS_display = QLabel("N/A m/s")
         self.CS_display.setStyleSheet(style)
-        self.position = QLabel("Position")
+        self.distance_traveled = QLabel("Distance Traveled")
         self.Pos_display = QLabel ("0 m")
         self.Pos_display.setStyleSheet(style)
 
-        speed_layout.addWidget(self.current_speed)
+        # New display for inverter voltage
+        self.inverter_display = QLabel("Inverter Voltage:")
+        self.inverter_voltage = QLabel("Voltage: N/A V")
+        self.inverter_voltage.setStyleSheet(style)
+
+        inverter_layout.addWidget(self.inverter_display)
+        inverter_layout.addWidget(self.inverter_voltage)
+
+        speed_layout.addWidget(self.velocity)
         speedDisplay_layout.addWidget(self.CS_display)
-        pos_pressure_layout.addWidget(self.position)
+        pos_pressure_layout.addWidget(self.distance_traveled)
         posPressureDisplay_layout.addWidget(self.Pos_display)
-        
 
         # Connect buttons to their respective functions
 
@@ -188,14 +196,79 @@ class HyperloopControlGUI(QMainWindow):
         main_layout.addLayout(speedDisplay_layout)
         main_layout.addLayout(pos_pressure_layout)
         main_layout.addLayout(posPressureDisplay_layout)
+        main_layout.addLayout(inverter_layout)  # Added inverter layout
         main_layout.addLayout(commandwindow_layout)
         central_widget.setLayout(main_layout)
+
+    def improveGUI(self, sensor_data):
+        # input list
+        (bat1_temp, bat1_volt, bat1_cur,
+         bat2_temp, bat2_volt, bat2_cur,
+         bat3_temp, bat3_volt, bat3_cur,
+         bat4_temp, bat4_volt, bat4_cur,
+         lim_temp, lim_volt, lim_cur,
+         brake1_deployed, brake2_deployed,
+         velocity, distance_traveled, state,
+         inverter_volt) = sensor_data  # New inverter voltage added
+
+        # Update inverter voltage display
+        self.inverter_voltage.setText(f"Voltage: {inverter_volt} V")
+
+        # battery 1 values (temp, voltage, current)
+        self.bat1_temp.setText(f"Temperature: {bat1_temp} °C")
+        self.bat1_volt.setText(f"Voltage: {bat1_volt} V")
+        self.bat1_cur.setText(f"Current: {bat1_cur} A")
+        #battery 2 values
+        self.bat2_temp.setText(f"Temperature: {bat2_temp} °C")
+        self.bat2_volt.setText(f"Voltage: {bat2_volt} V")
+        self.bat2_cur.setText(f"Current: {bat2_cur} A")
+
+        #battery 3 values
+        self.bat3_temp.setText(f"Temperature: {bat3_temp} °C")
+        self.bat3_volt.setText(f"Voltage: {bat3_volt} V")
+        self.bat3_cur.setText(f"Current: {bat3_cur} A")
+
+        #battery 4 values
+        self.bat4_temp.setText(f"Temperature: {bat4_temp} °C")
+        self.bat4_volt.setText(f"Voltage: {bat4_volt} V")
+        self.bat4_cur.setText(f"Current: {bat4_cur} A")
+
+        #updated LIM values
+        self.limTemp.setText(f"Temperature: {lim_temp} °C")
+        self.limVolt.setText(f"Voltage: {lim_volt} V")
+        self.limCur.setText(f"Current: {lim_cur} A")
+
+        #updated break positions
+        self.brake_1_pos.setText("Deployed" if brake1_deployed else "Retracted")
+        self.brake_2_pos.setText("Deployed" if brake2_deployed else "Retracted")
+
+        #updated velocity/position
+        self.CS_display.setText(f"{velocity} m/s")
+        self.Pos_display.setText(f"{distance_traveled} m")
+
+        #updated pod state
+        self.state.setText(state)
 
 def main():
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
     window = HyperloopControlGUI()
     window.show()
+
+    # Example data to update the GUI, including inverter voltage
+    example_data = [
+        25.0, 48.5, 10.2,  # Battery 1
+        26.5, 48.1, 10.0,  # Battery 2
+        27.0, 48.7, 10.5,  # Battery 3
+        25.5, 48.2, 10.1,  # Battery 4
+        60.0, 400.0, 15.0,  # LIM
+        True, False,         # Brakes
+        300.5, 1200.0,       # Speed and position
+        "In Transit",        # State
+        220.0                # Inverter voltage
+    ]
+    window.improveGUI(example_data)
+
     sys.exit(app.exec())
 
 if __name__ == "__main__":
