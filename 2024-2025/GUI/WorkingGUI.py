@@ -6,7 +6,7 @@ import json
 import time
 from PySide6.QtWidgets import QApplication, QGroupBox, QMainWindow, QPushButton, QLabel, QVBoxLayout, QHBoxLayout, QWidget, QSlider, QPlainTextEdit, QTextEdit, QMessageBox, QFrame, QGraphicsDropShadowEffect
 from PySide6.QtCore import Qt, QTimer, Signal, QObject
-from PySide6.QtGui import QPixmap, QImage, QFont, QFontDatabase, QColor
+from PySide6.QtGui import QPixmap, QImage, QFont, QFontDatabase, QColor, QTextCursor
 
 
 
@@ -15,8 +15,8 @@ from PySide6.QtGui import QPixmap, QImage, QFont, QFontDatabase, QColor
 
 HOST_IP = "192.168.x.x"
 TCP_PORT = 5000
-CMD_FILE = "C:/Users/ankar/OneDrive/Desktop/GNC/Hyperloop/TMUHyperloop/2024-2025/GUI/commands.txt"
-DATA_FILE = "C:/Users/ankar/OneDrive/Desktop/GNC/Hyperloop/TMUHyperloop/2024-2025/GUI/data.txt"
+CMD_FILE = "C:/Users/user/Documents/Coding Projects/GUI/TMUHyperloop/2024-2025/GUI/commands.txt"
+DATA_FILE = "C:/Users/user/Documents/Coding Projects/GUI/TMUHyperloop/2024-2025/GUI/data.txt"
 #d_LOCK = threading.Lock()
 #c_LOCK = threading.Lock()
 
@@ -325,11 +325,56 @@ class HyperloopControlGUI(QMainWindow):
         main_layout.addWidget(state_frame)
         main_layout.addLayout(content_layout)
         central_widget.setLayout(main_layout)
-
-
+        
         #------------------------------------------------------------------------------------------
+        
+        # small debug print to confirm constructor completed:
+        print("GUI constructed")
 
+        # ------------------- Add terminal-style logs -------------------
+        # Group boxes + terminal text areas placed at bottom of the window
+        system_group = QGroupBox("SYSTEM LOGS")
+        system_group.setStyleSheet("QGroupBox { color: #65ff9c; font-weight: bold; }")
+        self.system_logs = QPlainTextEdit()
+        self.system_logs.setReadOnly(True)
+        self.system_logs.setPlainText("")  # start empty
+        self.system_logs.setStyleSheet("""
+            QPlainTextEdit {
+                background: #0f1216;
+                color: #9ef08a;
+                border: 1px solid #224;
+                padding: 8px;
+                font-family: 'Courier New', monospace;
+                font-size: 11pt;
+            }
+        """)
+        sg_layout = QVBoxLayout(system_group)
+        sg_layout.addWidget(self.system_logs)
 
+        rover_group = QGroupBox("ROVER LOGS")
+        rover_group.setStyleSheet("QGroupBox { color: #ffb86b; font-weight: bold; }")
+        self.rover_logs = QPlainTextEdit()
+        self.rover_logs.setReadOnly(True)
+        self.rover_logs.setStyleSheet("""
+            QPlainTextEdit {
+                background: #0f1216;
+                color: #ffb86b;
+                border: 1px solid #224;
+                padding: 8px;
+                font-family: 'Courier New', monospace;
+                font-size: 11pt;
+            }
+        """)
+        rg_layout = QVBoxLayout(rover_group)
+        rg_layout.addWidget(self.rover_logs)
+
+        # place side-by-side under the main content
+        logs_layout = QHBoxLayout()
+        logs_layout.addWidget(system_group, stretch=3)
+        logs_layout.addWidget(rover_group, stretch=3)
+        main_layout.addLayout(logs_layout)
+        # ------------------- end logs -------------------
+        
         # small debug print to confirm constructor completed:
         print("GUI constructed")
 
@@ -402,8 +447,26 @@ class HyperloopControlGUI(QMainWindow):
 #------------------------------------------------------------------------------------------------------
     def log_command(self, message):
         timestamp = time.strftime("%H:%M:%S", time.localtime())
-        self.command_window.append(f"[{timestamp}] {message}")
+        line = f"[{timestamp}] {message}"
+        # default to system logs; use append helpers so it autoscrolls
+        try:
+            self.append_system_log(line)
+        except Exception:
+            # fallback print if GUI not ready
+            print(line)
 
+    def append_system_log(self, message: str):
+        # Append and autoscroll to end
+        self.system_logs.appendPlainText(message)
+        cursor = self.system_logs.textCursor()
+        cursor.movePosition(QTextCursor.End)
+        self.system_logs.setTextCursor(cursor)
+
+    def append_rover_log(self, message: str):
+        self.rover_logs.appendPlainText(message)
+        cursor = self.rover_logs.textCursor()
+        cursor.movePosition(QTextCursor.End)
+        self.rover_logs.setTextCursor(cursor)
 
     def on_launch(self):
         self.C_LOCK.acquire()
@@ -496,4 +559,4 @@ if __name__ == "__main__":
 
 
 
-   
+
