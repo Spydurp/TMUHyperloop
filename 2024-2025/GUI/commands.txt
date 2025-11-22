@@ -1,1 +1,5 @@
+<<<<<<< HEAD
 ABORT
+=======
+STOP_NOW
+>>>>>>> 9e25b95df42d10df0770a8b2851563f235b20e8d
