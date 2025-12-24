@@ -15,8 +15,9 @@ from PySide6.QtGui import QPixmap, QImage, QFont, QFontDatabase, QColor, QTextCu
 
 HOST_IP = "192.168.x.x"
 TCP_PORT = 5000
-CMD_FILE = "C:/Users/user/Documents/Coding Projects/GUI/TMUHyperloop/2024-2025/GUI/commands.txt"
-DATA_FILE = "C:/Users/user/Documents/Coding Projects/GUI/TMUHyperloop/2024-2025/GUI/data.txt"
+CMD_FILE = "2024-2025\GUI\commands.txt"
+DATA_FILE = "2024-2025\GUI\data.txt"
+LOGO_PATH = "2024-2025\GUI\Hyperloop_full_logo_B.png"
 #d_LOCK = threading.Lock()
 #c_LOCK = threading.Lock()
 
@@ -150,13 +151,13 @@ class HyperloopControlGUI(QMainWindow):
 
 
         #----------------------------------------------------------------------------------------------
-        # ---------- Current State Frame: @ Top ----------
-        state_frame = QGroupBox("CURRENT STATE")
-        state_frame.setObjectName("stateframe")
-        state_frame.setFixedHeight(150)
+        # ---------- Title Frame @ Top ----------
+        title_frame = QGroupBox("Metropolitan Hyperloop")
+        title_frame.setObjectName("titleframe")
+        title_frame.setFixedHeight(150)
 
 
-        state_frame.setStyleSheet("""
+        title_frame.setStyleSheet("""
             QGroupBox#stateframe {
                 background: rgba(255,255,255,0.04);
                 border-radius: 14px;
@@ -185,20 +186,19 @@ class HyperloopControlGUI(QMainWindow):
         glow_top.setBlurRadius(40)
         glow_top.setColor(QColor(96,165,250))
         glow_top.setOffset(0, 0)
-        state_frame.setGraphicsEffect(glow_top)
+        title_frame.setGraphicsEffect(glow_top)
 
 
         # inner layout for content
-        state_layout = QHBoxLayout(state_frame)
-        #state_layout.setSpacing(50)
-        #state_layout.setAlignment(Qt.AlignLeft)
+        title_layout = QHBoxLayout(title_frame)
 
-
-        # inner content:
-        self.state_display = QLabel("System")
-        self.state_display.setFont(QFont("Times New Roman", 16))
-        self.state_display.setStyleSheet("color: white; background: transparent;")
-        state_layout.addWidget(self.state_display)
+        # Logo Display:
+        self.logo_display = QLabel(self)
+        self.logo_display.setAlignment(Qt.AlignCenter)
+        logo = QPixmap(LOGO_PATH).scaled(self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        self.logo_display.setPixmap(logo)
+        self.logo_display.setScaledContents(True)
+        title_layout.addWidget(self.logo_display)
        
         # ------------ left and right layout arrangement -------------
         main_layout = QHBoxLayout()   # split screen: left = telemetry, right = controls
@@ -322,7 +322,7 @@ class HyperloopControlGUI(QMainWindow):
 
         # State frame layout
         main_layout = QVBoxLayout()
-        main_layout.addWidget(state_frame)
+        main_layout.addWidget(title_frame)
         main_layout.addLayout(content_layout)
         central_widget.setLayout(main_layout)
         
@@ -351,11 +351,11 @@ class HyperloopControlGUI(QMainWindow):
         sg_layout = QVBoxLayout(system_group)
         sg_layout.addWidget(self.system_logs)
 
-        rover_group = QGroupBox("ROVER LOGS")
-        rover_group.setStyleSheet("QGroupBox { color: #ffb86b; font-weight: bold; }")
-        self.rover_logs = QPlainTextEdit()
-        self.rover_logs.setReadOnly(True)
-        self.rover_logs.setStyleSheet("""
+        pod_group = QGroupBox("POD LOGS")
+        pod_group.setStyleSheet("QGroupBox { color: #ffb86b; font-weight: bold; }")
+        self.pod_logs = QPlainTextEdit()
+        self.pod_logs.setReadOnly(True)
+        self.pod_logs.setStyleSheet("""
             QPlainTextEdit {
                 background: #0f1216;
                 color: #ffb86b;
@@ -365,13 +365,13 @@ class HyperloopControlGUI(QMainWindow):
                 font-size: 11pt;
             }
         """)
-        rg_layout = QVBoxLayout(rover_group)
-        rg_layout.addWidget(self.rover_logs)
+        rg_layout = QVBoxLayout(pod_group)
+        rg_layout.addWidget(self.pod_logs)
 
         # place side-by-side under the main content
         logs_layout = QHBoxLayout()
         logs_layout.addWidget(system_group, stretch=3)
-        logs_layout.addWidget(rover_group, stretch=3)
+        logs_layout.addWidget(pod_group, stretch=3)
         main_layout.addLayout(logs_layout)
         # ------------------- end logs -------------------
         
@@ -392,12 +392,7 @@ class HyperloopControlGUI(QMainWindow):
             bat4_temp, bat4_volt, bat4_cur,
             lim_temp, lim_volt, lim_cur,
             brake1_deployed, brake2_deployed,
-            velocity, distance_traveled, state,
-            inverter_volt) = data  # New inverter voltage added
-
-
-            # Update inverter voltage display
-            self.inverter_voltage.setText(f"Voltage: {inverter_volt} V")
+            velocity, distance_traveled, state) = data  # New inverter voltage added
 
 
             # battery 1 values (temp, voltage, current)
@@ -428,7 +423,7 @@ class HyperloopControlGUI(QMainWindow):
             self.limCur.setText(f"Current: {lim_cur} A")
 
 
-            # updated break positions
+            # updated brake positions
             self.brake_1_pos.setText("Deployed" if brake1_deployed else "Retracted")
             self.brake_2_pos.setText("Deployed" if brake2_deployed else "Retracted")
 
@@ -462,11 +457,11 @@ class HyperloopControlGUI(QMainWindow):
         cursor.movePosition(QTextCursor.End)
         self.system_logs.setTextCursor(cursor)
 
-    def append_rover_log(self, message: str):
-        self.rover_logs.appendPlainText(message)
-        cursor = self.rover_logs.textCursor()
+    def append_pod_log(self, message: str):
+        self.pod_logs.appendPlainText(message)
+        cursor = self.pod_logs.textCursor()
         cursor.movePosition(QTextCursor.End)
-        self.rover_logs.setTextCursor(cursor)
+        self.pod_logs.setTextCursor(cursor)
 
     def on_launch(self):
         self.C_LOCK.acquire()
