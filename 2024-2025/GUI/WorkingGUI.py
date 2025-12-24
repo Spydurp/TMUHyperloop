@@ -9,8 +9,8 @@ from PySide6.QtGui import QPixmap, QImage, QFont
 
 HOST_IP = "192.168.x.x"
 TCP_PORT = 5000
-CMD_FILE = "C:/Users/ankar/OneDrive/Desktop/GNC/Hyperloop/TMUHyperloop/2024-2025/GUI/commands.txt"
-DATA_FILE = "C:/Users/ankar/OneDrive/Desktop/GNC/Hyperloop/TMUHyperloop/2024-2025/GUI/data.txt"
+CMD_FILE = "2024-2025\GUI\commands.txt"
+DATA_FILE = "2024-2025\GUI\data.txt"
 #d_LOCK = threading.Lock()
 #c_LOCK = threading.Lock()
 
@@ -90,11 +90,14 @@ class HyperloopControlGUI(QMainWindow):
 
         # Hyperloop logo
         self.image_label = QLabel()
-        image_path = "2024-2025\GUI\miku.jpg"
+        image_path = "2024-2025\GUI\Hyperloop_full_logo_B.png"
         pixmap = QPixmap()
         pixmap.load(image_path)
+        pixmap = pixmap.scaled(580, 111)
         self.image_label.setPixmap(pixmap)
         self.image_label.setAlignment(Qt.AlignHCenter)
+        self.image_label.setScaledContents(True)
+
     
         image_layout.addWidget(self.image_label)
 

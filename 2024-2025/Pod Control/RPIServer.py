@@ -32,6 +32,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             self.wfile.write(values)
             print("sent")
         self.sensor_lock.release()
+
 class RpiServer(socketserver.TCPServer):
     def __init__(self, server_address, RequestHandlerClass, bind_and_activate, command_lock: threading.Lock, sensor_lock: threading.Lock):
         super().__init__(server_address, RequestHandlerClass, bind_and_activate)
