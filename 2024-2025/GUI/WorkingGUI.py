@@ -379,69 +379,69 @@ class HyperloopControlGUI(QMainWindow):
         print("GUI constructed")
 
 
-        def improveGUI(self):
-            # input list
-            self.D_LOCK.acquire()
-            with open(DATA_FILE, "r") as d:
-                data = d.read().split(',')
-            self.D_LOCK.release()
-            try:
-                (bat1_temp, bat1_volt, bat1_cur,
-                bat2_temp, bat2_volt, bat2_cur,
-                bat3_temp, bat3_volt, bat3_cur,
-                bat4_temp, bat4_volt, bat4_cur,
-                lim_temp, lim_volt, lim_cur,
-                brake1_deployed, brake2_deployed,
-                velocity, distance_traveled, state,
-                inverter_volt) = data  # New inverter voltage added
+    def improveGUI(self):
+        # input list
+        self.D_LOCK.acquire()
+        with open(DATA_FILE, "r") as d:
+            data = d.read().split(',')
+        self.D_LOCK.release()
+        try:
+            (bat1_temp, bat1_volt, bat1_cur,
+            bat2_temp, bat2_volt, bat2_cur,
+            bat3_temp, bat3_volt, bat3_cur,
+            bat4_temp, bat4_volt, bat4_cur,
+            lim_temp, lim_volt, lim_cur,
+            brake1_deployed, brake2_deployed,
+            velocity, distance_traveled, state,
+            inverter_volt) = data  # New inverter voltage added
 
 
-                # Update inverter voltage display
-                self.inverter_voltage.setText(f"Voltage: {inverter_volt} V")
+            # Update inverter voltage display
+            self.inverter_voltage.setText(f"Voltage: {inverter_volt} V")
 
 
-                # battery 1 values (temp, voltage, current)
-                self.bat1_temp.setText(f"Temperature: {bat1_temp} °C")
-                self.bat1_volt.setText(f"Voltage: {bat1_volt} V")
-                self.bat1_cur.setText(f"Current: {bat1_cur} A")
-                # battery 2 values
-                self.bat2_temp.setText(f"Temperature: {bat2_temp} °C")
-                self.bat2_volt.setText(f"Voltage: {bat2_volt} V")
-                self.bat2_cur.setText(f"Current: {bat2_cur} A")
+            # battery 1 values (temp, voltage, current)
+            self.bat1_temp.setText(f"Temperature: {bat1_temp} °C")
+            self.bat1_volt.setText(f"Voltage: {bat1_volt} V")
+            self.bat1_cur.setText(f"Current: {bat1_cur} A")
+            # battery 2 values
+            self.bat2_temp.setText(f"Temperature: {bat2_temp} °C")
+            self.bat2_volt.setText(f"Voltage: {bat2_volt} V")
+            self.bat2_cur.setText(f"Current: {bat2_cur} A")
 
 
-                # battery 3 values
-                self.bat3_temp.setText(f"Temperature: {bat3_temp} °C")
-                self.bat3_volt.setText(f"Voltage: {bat3_volt} V")
-                self.bat3_cur.setText(f"Current: {bat3_cur} A")
+            # battery 3 values
+            self.bat3_temp.setText(f"Temperature: {bat3_temp} °C")
+            self.bat3_volt.setText(f"Voltage: {bat3_volt} V")
+            self.bat3_cur.setText(f"Current: {bat3_cur} A")
 
 
-                # battery 4 values
-                self.bat4_temp.setText(f"Temperature: {bat4_temp} °C")
-                self.bat4_volt.setText(f"Voltage: {bat4_volt} V")
-                self.bat4_cur.setText(f"Current: {bat4_cur} A")
+            # battery 4 values
+            self.bat4_temp.setText(f"Temperature: {bat4_temp} °C")
+            self.bat4_volt.setText(f"Voltage: {bat4_volt} V")
+            self.bat4_cur.setText(f"Current: {bat4_cur} A")
 
 
-                # updated LIM values
-                self.limTemp.setText(f"Temperature: {lim_temp} °C")
-                self.limVolt.setText(f"Voltage: {lim_volt} V")
-                self.limCur.setText(f"Current: {lim_cur} A")
+            # updated LIM values
+            self.limTemp.setText(f"Temperature: {lim_temp} °C")
+            self.limVolt.setText(f"Voltage: {lim_volt} V")
+            self.limCur.setText(f"Current: {lim_cur} A")
 
 
-                # updated break positions
-                self.brake_1_pos.setText("Deployed" if brake1_deployed else "Retracted")
-                self.brake_2_pos.setText("Deployed" if brake2_deployed else "Retracted")
+            # updated break positions
+            self.brake_1_pos.setText("Deployed" if brake1_deployed else "Retracted")
+            self.brake_2_pos.setText("Deployed" if brake2_deployed else "Retracted")
 
 
-                # updated velocity/position
-                self.CS_display.setText(f"{velocity} m/s")
-                self.Pos_display.setText(f"{distance_traveled} m")
+            # updated velocity/position
+            self.CS_display.setText(f"{velocity} m/s")
+            self.Pos_display.setText(f"{distance_traveled} m")
 
 
-                # updated pod state
-                self.state.setText(state)
-            except Exception as e:
-                self.log_command(f"Error updating GUI with received data: {str(e)}")
+            # updated pod state
+            self.state.setText(state)
+        except Exception as e:
+            self.log_command(f"Error updating GUI with received data: {str(e)}")
 
 
 #------------------------------------------------------------------------------------------------------
