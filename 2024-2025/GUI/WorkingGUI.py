@@ -1,336 +1,440 @@
 import sys
-import os
-import socket
-import threading
-import json
+from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QGroupBox, QPushButton, QGraphicsDropShadowEffect, QPlainTextEdit, QProgressBar, QScrollArea
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QColor
 import time
-from PySide6.QtWidgets import QApplication, QGroupBox, QMainWindow, QPushButton, QLabel, QVBoxLayout, QHBoxLayout, QWidget, QSlider, QPlainTextEdit, QTextEdit, QMessageBox, QFrame, QGraphicsDropShadowEffect
-from PySide6.QtCore import Qt, QTimer, Signal, QObject
-from PySide6.QtGui import QPixmap, QImage, QFont, QFontDatabase, QColor, QTextCursor
 
 
-
-
-
-
-HOST_IP = "192.168.x.x"
-TCP_PORT = 5000
-CMD_FILE = "C:/Users/user/Documents/Coding Projects/GUI/TMUHyperloop/2024-2025/GUI/commands.txt"
-DATA_FILE = "C:/Users/user/Documents/Coding Projects/GUI/TMUHyperloop/2024-2025/GUI/data.txt"
-#d_LOCK = threading.Lock()
-#c_LOCK = threading.Lock()
 
 
 class HyperloopControlGUI(QMainWindow):
-    def __init__(self, d_lock: threading.Lock, c_lock: threading.Lock):
+    def __init__(self):
         super().__init__()
-        self.D_LOCK = d_lock
-        self.C_LOCK = c_lock
 
 
-        self.setWindowTitle("Pod Control GUI")
-        self.setGeometry(100, 100, 900, 600)    #size of display
+        self.setWindowTitle("Hyperloop Pod Control System")
+        self.setGeometry(100, 100, 1500, 900)
 
 
-        central_widget = QWidget()              #display screen
-        self.setCentralWidget(central_widget)   #display widgets
+        # ------------------------- SCROLL AREA WRAPPER ----------------------------
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setStyleSheet("QScrollArea { background-color: #0b0e19; }")
 
 
-        # Window Style:
+        container = QWidget()
+        scroll_area.setWidget(container)
+
+
+        main_layout = QVBoxLayout(container)
+        main_layout.setContentsMargins(25, 25, 25, 25)
+        main_layout.setSpacing(30)
+
+
+        self.setCentralWidget(scroll_area)
+
+
+        # ----------------------------- GLOBAL STYLE ------------------------------
         self.setStyleSheet("""
-            QMainWindow { background-color: #474649; }
-            QWidget { background-color: #242533; color: white; }
-            QLabel { color: white; }
+            QMainWindow { background-color: #0b0e19; }
+            QWidget { background-color: transparent; color: white; }
+            QLabel { color: white; font-family: 'Eurostile'; }
         """)
 
 
-       #---------------------------- Creating widgets/layouts --------------------------------
+        # =========================================================================
+        #                           CURRENT STATE BOX
+        # =========================================================================
        
-       #Button_style:
-        button_style = """
-            QPushButton {
-                padding: 8px;
-                font-family: 'Times New Roman';
-                font-weight: bold;
-                font-size: 12pt;
-                background-color: #2E2E2E;   /* color of button */
-                color: white;                /* color of writing */
-                border: 1px solid gray;      /* border */
-                border-radius: 10px;         /* rounder edges */
-            }
-            QPushButton:hover {
-                background-color: #3A3A3A;  
-            }
-            QPushButton:pressed {
-                background-color: #1E1E1E;  
-            }
-        """
-        green_button_style = button_style + " QPushButton {background-color: #206a2a; color: white;}"
-        red_button_style = button_style + " QPushButton { background-color: #d80505; color: white; }"
-        blue_button_style = button_style + " QPushButton { background-color: #090daa; color: white; }"
-        orange_button_style = button_style + " QPushButton { background-color: #f56612; color: white; }"
-        purple_button_style = button_style + " QPushButton { background-color: #7702cf; color: white; }"
-        yellow_button_style = button_style + " QPushButton { background-color: #f9ba1d; color: white; }"
-       
-
-
-        #display_style = "QLabel { border: 1px solid gray; background-color: #1E1E1E; color: white; padding: 5px; }"
-        #state_style = "QLabel { border: 1px solit gray; background-color: #1E1E1E; color: white: padding: 5px; font: 18pt; }"
-
-
-        #Right-side vertical buttons:
-        # Control buttons:
-        self.launch_button = QPushButton("LAUNCH")
-        self.launch_button.setStyleSheet(green_button_style)
-        self.launch_button.clicked.connect(self.on_launch)
-       
-        self.stop_button = QPushButton("STOP")
-        self.stop_button.setStyleSheet(red_button_style)
-        self.stop_button.clicked.connect(self.on_stop)
-
-
-        self.e_stop_button = QPushButton("STOP NOW")
-        self.e_stop_button.setStyleSheet(orange_button_style)
-        self.e_stop_button.clicked.connect(self.on_e_stop)
-
-
-        self.ready_button = QPushButton("PREP FOR LAUNCH")
-        self.ready_button.setStyleSheet(yellow_button_style)
-        self.ready_button.clicked.connect(self.on_ready)
-
-
-        self.cancel_button = QPushButton("ABORT LAUNCH")
-        self.cancel_button.setStyleSheet(purple_button_style)
-        self.cancel_button.clicked.connect(self.on_Cancel)
-
-
-        self.reset_fault_button = QPushButton("RESET FAULT")
-        self.reset_fault_button.setStyleSheet(blue_button_style)
-        self.reset_fault_button.clicked.connect(self.on_fault_reset)
-
-
-
-
-        # # Image label:
-        # self.image_label = QLabel()
-        # image_path = os.path.join("2024-2025", "GUI", "miku.jpg")
-        # if os.path.exists(image_path):
-        #     pixmap = QPixmap(image_path)
-        #     self.image_label.setPixmap(pixmap)
-        # else:
-        #     self.image_label.setText("(image not found)")
-        # self.image_label.setAlignment(Qt.AlignCenter)
-
-
-        # Telemetry labels:
-        display_style = "QLabel { border: 1px solid gray; background-color: #1E1E1E; color: white; padding: 5px; }"
-       
-        self.bat1_volt = QLabel("Voltage: N/A V")
-        self.bat1_volt.setStyleSheet(display_style)
-        self.bat1_cur = QLabel("Current: N/A A")
-        self.bat1_cur.setStyleSheet(display_style)
-        self.bat1_temp = QLabel("Temperature: N/A °C")
-        self.bat1_temp.setStyleSheet(display_style)
-
-
-        self.limVolt = QLabel("Voltage: N/A V")
-        self.limVolt.setStyleSheet(display_style)
-        self.inverter_voltage = QLabel("Voltage: N/A V")
-        self.inverter_voltage.setStyleSheet(display_style)
-
-
-        self.state = QLabel("Safe to Approach")
-        self.state.setStyleSheet(display_style)
-        self.state.setFont(QFont("Arial", 18))
-
-
-        # # Command log:
-        # self.command_window = QTextEdit()
-        # self.command_window.setReadOnly(True)
-
-
-        #----------------------------------------------------------------------------------------------
-        # ---------- Current State Frame: @ Top ----------
-        state_frame = QGroupBox("CURRENT STATE")
-        state_frame.setObjectName("stateframe")
-        state_frame.setFixedHeight(150)
-
-
+        # Bigger glowing box with inner glowing panel and subtitle
+        state_frame = QGroupBox("")  # title handled by internal label to place it exactly
+        state_frame.setObjectName("state_frame")
+        state_frame.setFixedHeight(200)
         state_frame.setStyleSheet("""
-            QGroupBox#stateframe {
-                background: rgba(255,255,255,0.04);
-                border-radius: 14px;
-                border: 2px solid rgba(96,165,250,0.22);  
-                padding: 10 px;
-                font-family: 'Times New Roman';
-                font-weight: bold;
-                font-size: 15pt;
-                color: white;
-                left: 375px;      /* title how much to the right */
-                top: 30px;        /* title how much to the bottom */
-                margin-top: 10px;
-            }
-            QGroupBox::title {
-                left: 375px;      /* title how much to the right */
-                top: 30px;        /* title how much to the bottom */
-                padding: 0 4px;   /* top/bottom, left/right */
-                color: rgb(180,200,255);    
-                font-size: 15pt;
+            #state_frame {
+                background-color: #0d1220;
+                border-radius: 25px;
+                border: 3px solid rgba(0,255,120,0.30);
+                padding-top: 10px;
             }
         """)
+        # Outer glow
+        outer_glow = QGraphicsDropShadowEffect()
+        outer_glow.setBlurRadius(120)
+        outer_glow.setColor(QColor(0, 255, 120))
+        outer_glow.setOffset(0, 0)
+        state_frame.setGraphicsEffect(outer_glow)
 
 
-        # Add glow effect:
-        glow_top = QGraphicsDropShadowEffect()
-        glow_top.setBlurRadius(40)
-        glow_top.setColor(QColor(96,165,250))
-        glow_top.setOffset(0, 0)
-        state_frame.setGraphicsEffect(glow_top)
+        main_layout.addWidget(state_frame)
+        state_layout = QVBoxLayout(state_frame)
+        state_layout.setAlignment(Qt.AlignCenter)
 
 
-        # inner layout for content
-        state_layout = QHBoxLayout(state_frame)
-        #state_layout.setSpacing(50)
-        #state_layout.setAlignment(Qt.AlignLeft)
+        # Title inside (so it appears inside the frame like your image)
+        self.state_title = QLabel("CURRENT STATE")
+        self.state_title.setStyleSheet("""
+            font-size: 26px;
+            font-weight: bold;
+            font-family: 'Times New Roman';
+            color: #28ff9c;
+            letter-spacing: 3px;
+        """)
+        state_layout.addWidget(self.state_title, alignment=Qt.AlignTop | Qt.AlignHCenter)
 
 
-        # inner content:
-        self.state_display = QLabel("System")
-        self.state_display.setFont(QFont("Times New Roman", 16))
-        self.state_display.setStyleSheet("color: white; background: transparent;")
-        state_layout.addWidget(self.state_display)
-       
-        # ------------ left and right layout arrangement -------------
-        main_layout = QHBoxLayout()   # split screen: left = telemetry, right = controls
-        left_layout = QVBoxLayout()
-        right_layout = QVBoxLayout()
+        # inner glowing panel
+        inner = QWidget()
+        inner.setStyleSheet("""
+            background-color: #0d1220;
+            border-radius: 20px;
+            border: 2px solid rgba(0,255,120,0.35);
+        """)
+        inner.setFixedHeight(90)
+        inner_glow = QGraphicsDropShadowEffect()
+        inner_glow.setBlurRadius(80)
+        inner_glow.setColor(QColor(0, 255, 120))
+        inner_glow.setOffset(0, 0)
+        inner.setGraphicsEffect(inner_glow)
 
 
-        # ---------- Left  ----------
-        #left_layout.addWidget(self.image_label)
-        left_layout.addWidget(QLabel("Battery 1"))
-        left_layout.addWidget(self.bat1_volt)
-        left_layout.addWidget(self.bat1_cur)
-        left_layout.addWidget(self.bat1_temp)
-       
-        left_layout.addSpacing(10)
+        inner_layout = QVBoxLayout(inner)
+        inner_layout.setAlignment(Qt.AlignCenter)
 
 
-        left_layout.addWidget(QLabel("LIM"))
-        left_layout.addWidget(self.limVolt)
-        left_layout.addWidget(QLabel("Inverter"))
-        left_layout.addWidget(self.inverter_voltage)
+        self.status_label = QLabel("SAFE")
+        self.status_label.setStyleSheet("""
+            font-size: 55px;
+            font-family: 'Times New Roman';
+            font-weight: bold;
+            color: #28ff7a;
+        """)
+        inner_layout.addWidget(self.status_label, alignment=Qt.AlignCenter)
 
 
-        left_layout.addSpacing(10)
+        self.status_subtitle = QLabel("System Status: Operational")
+        self.status_subtitle.setStyleSheet("""
+            font-size: 20px;
+            font-family: 'Times New Roman';
+        """)
+        # Add inner and subtitle to outer state frame
+        state_layout.addWidget(inner)
+        state_layout.addWidget(self.status_subtitle, alignment=Qt.AlignHCenter)
 
 
-        left_layout.addWidget(QLabel("State"))
-        left_layout.addWidget(self.state)
+        # =========================================================================
+        #                             3 COLUMN LAYOUT
+        # =========================================================================
+        content_layout = QHBoxLayout()
+        content_layout.setSpacing(30)
+        main_layout.addLayout(content_layout)
 
 
-        left_layout.addStretch(2)
+        col1, col2, col3 = QVBoxLayout(), QVBoxLayout(), QVBoxLayout()
 
 
-        # left_layout.addWidget(QLabel("Command Log:"))
-        # left_layout.addWidget(self.command_window, stretch=2)
-        #---------------------------------------------------------------------------------
-
-
-        # ---------- Right  ----------
-        control_frame = QGroupBox("MISSION CONTROL")     # frame
-        control_frame.setObjectName("glowframe")
-        control_frame.setFixedWidth(280)
-
-
-        # Frame Style:
-        control_frame.setStyleSheet("""
-            QGroupBox#glowframe {
-                background: rgba(255,255,255,0.03);
-                border-radius: 14px;
-                border: 2px solid rgba(96,165,250,0.22);
-                padding: 12px;
+        # =========================================================================
+        #                             LIM SYSTEM BOX
+        # =========================================================================
+        lim_box = QGroupBox("LIM SYSTEM")
+        lim_box.setObjectName("lim_box")
+        lim_box.setStyleSheet("""
+            QGroupBox#lim_box {
+                background-color: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 #0c1726, stop:1 #0f1b2e);
+                border-radius: 18px;
+                border: 2px solid rgba(0,255,120,0.12);
+                font-size: 18px;
                 font-family: 'Times New Roman';
                 font-weight: bold;
-                font-size: 13pt;
-                color: white;
-                margin-top: 24px;          /* adds space above for title */
+                color: #26ff7a;
+                padding-top: 25px;
             }
             QGroupBox::title {
-                subcontrol-origin: margin;  /* adds title above the frame */
-                left: 12px;
-                top: 4px;
-                padding: 0 4px;
+                /*left: 12px;
+                top: -8px;
+                font-size: 20px;
+                color: #7fbcff; */
+                             
+                subcontrol-origin: margin;
+                subcontrol-position: top left;
+
+
+                padding: 25px 15px;
+                margin-top: 0px;       /* keep title inside */
+                margin-left: 8px;
+
+
                 color: rgb(180,200,255);
                 font-size: 14pt;
+                background-color: transparent;  /* keeps glowframe background clean */
+            }
+        """)
+        lim_layout = QVBoxLayout(lim_box)
+        lim_layout.setSpacing(18)
+        lim_layout.setContentsMargins(18, 35, 18, 25)
+
+
+        # small card style for each parameter row
+        row_card_style = """
+            background-color: rgba(10,16,26,1);
+            border-radius: 12px;
+            padding: 14px;
+        """
+        label_style = "font-size: 14px; color: #bcdfff;"
+
+
+        def make_lim_row(name, value_text, bar_color_hex, bar_val=65):
+            # whole card widget
+            card = QWidget()
+            card.setStyleSheet(row_card_style)
+            card_layout = QVBoxLayout(card)
+            card_layout.setContentsMargins(10, 6, 10, 6)
+            card_layout.setSpacing(10)
+
+
+            # top line (label + value)
+            top = QWidget()
+            top_layout = QHBoxLayout(top)
+            top_layout.setContentsMargins(0, 0, 0, 0)
+            top_layout.setSpacing(6)
+            lbl = QLabel(name)
+            lbl.setStyleSheet(label_style)
+            val = QLabel(value_text)
+            val.setStyleSheet("font-weight:bold; color:#9bd3ff; font-size:14px;")
+            top_layout.addWidget(lbl)
+            top_layout.addStretch()
+            top_layout.addWidget(val)
+
+
+            # progress bar
+            bar = QProgressBar()
+            bar.setRange(0, 100)
+            bar.setValue(bar_val)
+            bar.setTextVisible(False)
+            bar.setFixedHeight(12)
+            bar.setStyleSheet(f"""
+                QProgressBar {{
+                    border: 0px;
+                    background-color: #2a3946;
+                    border-radius: 6px;
+                }}
+                QProgressBar::chunk {{
+                    background-color: {bar_color_hex};
+                    border-radius: 6px;
+                }}
+            """)
+
+
+            card_layout.addWidget(top)
+            card_layout.addWidget(bar)
+            return card
+
+
+        lim_layout.addWidget(make_lim_row("Voltage", "516 V", "#4a8cff", 58))
+        lim_layout.addWidget(make_lim_row("Current", "160 A", "#ffb400", 45))
+        lim_layout.addWidget(make_lim_row("Temperature", "61°C", "#ff7b2c", 35))
+        lim_layout.addWidget(make_lim_row("Inverter Voltage", "738 V", "#ca6aff", 70))
+
+
+        col1.addWidget(lim_box)
+
+
+        # =========================================================================
+        #                           BRAKE SYSTEM BOX
+        # =========================================================================
+        brake_box = QGroupBox("BRAKE SYSTEM")
+        brake_box.setObjectName("brake_box")
+        brake_box.setStyleSheet("""
+            QGroupBox#brake_box {
+                background-color: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 #0c1726, stop:1 #0f1b2e);
+                border-radius: 18px;
+                border: 2px solid rgba(255,90,90,0.08);
+                font-size: 18px;
+                font-family: 'Times New Roman';
+                font-weight: bold;
+                color: #ff7070;
+                padding-top: 25px;
+            }
+            QGroupBox::title {
+                /*left: 12px;
+                top: -8px;
+                font-size: 20px;
+                color: #ff6b6b;*/
+                               
+                subcontrol-origin: margin;
+                subcontrol-position: top left;
+
+
+                padding: 25px 15px;
+                margin-top: 0px;       /* keep title inside */
+                margin-left: 8px;
+
+
+                color: rgb(180,200,255);
+                font-size: 14pt;
+                background-color: transparent;  /* keeps glowframe background clean */
+            }
+        """)
+        brake_layout = QVBoxLayout(brake_box)
+        brake_layout.setSpacing(18)
+        brake_layout.setContentsMargins(18, 32, 18, 25)
+
+
+        # inner dark cards for brake entries (to match screenshot)
+        brake_row_style = """
+            background-color: rgba(8,12,18,0.9);
+            border-radius: 12px;
+            padding: 16px;
+        """
+
+
+        def brake_position_row(label_text, deployed=True):
+            card = QWidget()
+            card.setStyleSheet(brake_row_style)
+            l = QHBoxLayout(card)
+            l.setContentsMargins(8, 4, 8, 4)
+            l.setSpacing(10)
+
+
+            label = QLabel(label_text)
+            label.setStyleSheet("font-size: 15px; color: #dfefff;")
+            l.addWidget(label)
+
+
+            l.addStretch()
+
+
+            dot = QLabel("●")
+            dot_color = "#ff4040" if deployed else "#25ff75"
+            dot.setStyleSheet(f"font-size:18px; color: {dot_color}; padding-right:8px;")
+            status_text = "DEPLOYED" if deployed else "UNDEPLOYED"
+            status_label = QLabel(status_text)
+            status_label.setStyleSheet(f"font-size:14px; font-weight:bold; color: {dot_color};")
+
+
+            l.addWidget(dot)
+            l.addWidget(status_label)
+            return card
+
+
+        brake_layout.addWidget(brake_position_row("Brake Position 1", deployed=True))
+        brake_layout.addWidget(brake_position_row("Brake Position 2", deployed=False))
+
+
+        # distance card (centered large number)
+        distance_card = QWidget()
+        distance_card.setStyleSheet("""
+            background-color: rgba(10,18,28,0.9);
+            border-radius: 12px;
+            padding: 16px;
+        """)
+        dlay = QVBoxLayout(distance_card)
+        dlay.setContentsMargins(12, 12, 12, 12)
+        dlay.setSpacing(10)
+        title = QLabel("Distance Traveled")
+        title.setStyleSheet("font-size:14px; color:#cfd8e6;")
+        title.setAlignment(Qt.AlignCenter)
+        self.dist_value = QLabel("2847 m")
+        self.dist_value.setStyleSheet("font-size:40px; font-weight:bold; color:#30ff7a;")
+        self.dist_value.setAlignment(Qt.AlignCenter)
+        dlay.addWidget(title)
+        dlay.addWidget(self.dist_value)
+        brake_layout.addWidget(distance_card)
+
+
+        col2.addWidget(brake_box)
+
+
+        # =========================================================================
+        #                           MISSION CONTROL BOX (kept minimal)
+        # =========================================================================
+        mc_box = QGroupBox("MISSION CONTROL")
+        mc_box.setObjectName("mc_box")
+        mc_box.setStyleSheet("""
+            QGroupBox#mc_box {
+                background-color: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 #0c1726, stop:1 #0f1b2e);
+                border-radius: 18px;
+                border: 2px solid rgba(96,165,250,0.12);
+                font-family: 'Times New Roman';
+                font-weight: bold;
+                font-size: 18px;
+                color: #9bbdff;
+                padding-top: 25px;
+            }
+            QGroupBox::title {
+                /*left: 12px;
+                top: -8px;
+                font-size: 20px;
+                color: #9bbdff;*/
+                             
+                font-family: 'Times New Roman';
+                font-weight: bold;
+                subcontrol-origin: margin;
+                subcontrol-position: top left;
+
+
+                padding: 25px 15px;
+                margin-top: 0px;       /* keep title inside */
+                margin-left: 8px;
+
+
+                color: rgb(180,200,255);
+                font-size: 14pt;
+                background-color: transparent;  /* keeps glowframe background clean */
             }
         """)
 
 
-        # Glow effect:
         glow = QGraphicsDropShadowEffect()
-        glow.setBlurRadius(40)
-        glow.setColor(QColor(96,165,250))  #color of glow
+        glow.setBlurRadius(45)
+        glow.setColor(QColor(96,165,250))
         glow.setOffset(0, 0)
-        control_frame.setGraphicsEffect(glow)
+        mc_box.setGraphicsEffect(glow)
 
 
-        # Layout inside the glowing group box:
-        control_layout = QVBoxLayout(control_frame)
-        control_layout.setSpacing(10)
+        mc_layout = QVBoxLayout(mc_box)
+        mc_layout.setSpacing(12)
+        mc_layout.setContentsMargins(20, 40, 20, 20)
 
 
-        # Adding buttons
-        for button in (
-            self.ready_button, self.cancel_button, self.launch_button,
-            self.stop_button, self.e_stop_button, self.reset_fault_button
-        ):
-            button.setParent(control_frame)
-            button.setFixedHeight(42)
-            # button.setStyleSheet(button.styleSheet() + """
-            #     QPushButton {
-            #         border-radius: 10px;
-            #         border: 1px solid rgba(0, 0, 0, 0.15);
-            #     }
-            #     QPushButton:pressed { padding-left: 2px; }
-            # """)
-            control_layout.addWidget(button)
+        def make_button(text, color):
+            btn = QPushButton(text)
+            btn.setFixedHeight(48)
+            btn.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {color};
+                    border-radius: 10px;
+                    font-size: 16px;
+                    font-weight: bold;
+                    color: white;
+                    padding: 6px;
+                }}
+                QPushButton:hover {{
+                    background-color: rgba(255,255,255,0.08);
+                }}
+            """)
+            return btn
 
 
-        control_layout.addStretch(1)
+        mc_layout.addWidget(make_button("PREP FOR LAUNCH", "#377dff"))
+        mc_layout.addWidget(make_button("ABORT LAUNCH", "#e08c17"))
+        mc_layout.addWidget(make_button("LAUNCH", "#28b44a"))
+        mc_layout.addWidget(make_button("STOP", "#e64800"))
+        mc_layout.addWidget(make_button("STOP NOW", "#6b2b2b"))  # muted red to match disabled look
+        mc_layout.addWidget(make_button("RESET FAULT", "#6f7d90"))
 
 
-        # adding frame as a widget the right layout
-        right_layout.addWidget(control_frame)
-        right_layout.addStretch(1)
+        col3.addWidget(mc_box)
 
 
+        # Add the 3 columns to main content layout
+        content_layout.addLayout(col1, 1)
+        content_layout.addLayout(col2, 1)
+        content_layout.addLayout(col3, 1)
 
 
-        # # Put left and right into main ------------------------------------------
-        # main_layout.addLayout(main_layout, stretch=3)
-        # main_layout.addLayout(left_layout, stretch=3)
-        # main_layout.addLayout(right_layout, stretch=3)
-        # central_widget.setLayout(main_layout)     #displaying everthing
-
-
-        # ---------- Combine everything ----------
-        content_layout = QHBoxLayout()
-        content_layout.addLayout(left_layout, stretch=3)
-        content_layout.addLayout(right_layout, stretch=3)
-
-
-        # State frame layout
-        main_layout = QVBoxLayout()
-        main_layout.addWidget(state_frame)
-        main_layout.addLayout(content_layout)
-        central_widget.setLayout(main_layout)
-        
-        #------------------------------------------------------------------------------------------
-        
-        # small debug print to confirm constructor completed:
-        print("GUI constructed")
-
+       
+        # ---------------- COMMAND LOG WINDOW -----------------
         # ------------------- Add terminal-style logs -------------------
         # Group boxes + terminal text areas placed at bottom of the window
         system_group = QGroupBox("SYSTEM LOGS")
@@ -351,6 +455,9 @@ class HyperloopControlGUI(QMainWindow):
         sg_layout = QVBoxLayout(system_group)
         sg_layout.addWidget(self.system_logs)
 
+
+
+
         rover_group = QGroupBox("ROVER LOGS")
         rover_group.setStyleSheet("QGroupBox { color: #ffb86b; font-weight: bold; }")
         self.rover_logs = QPlainTextEdit()
@@ -368,195 +475,21 @@ class HyperloopControlGUI(QMainWindow):
         rg_layout = QVBoxLayout(rover_group)
         rg_layout.addWidget(self.rover_logs)
 
+
+
+
         # place side-by-side under the main content
         logs_layout = QHBoxLayout()
         logs_layout.addWidget(system_group, stretch=3)
         logs_layout.addWidget(rover_group, stretch=3)
         main_layout.addLayout(logs_layout)
         # ------------------- end logs -------------------
-        
-        # small debug print to confirm constructor completed:
-        print("GUI constructed")
 
 
-        def improveGUI(self):
-            # input list
-            self.D_LOCK.acquire()
-            with open(DATA_FILE, "r") as d:
-                data = d.read().split(',')
-            self.D_LOCK.release()
-            try:
-                (bat1_temp, bat1_volt, bat1_cur,
-                bat2_temp, bat2_volt, bat2_cur,
-                bat3_temp, bat3_volt, bat3_cur,
-                bat4_temp, bat4_volt, bat4_cur,
-                lim_temp, lim_volt, lim_cur,
-                brake1_deployed, brake2_deployed,
-                velocity, distance_traveled, state,
-                inverter_volt) = data  # New inverter voltage added
-
-
-                # Update inverter voltage display
-                self.inverter_voltage.setText(f"Voltage: {inverter_volt} V")
-
-
-                # battery 1 values (temp, voltage, current)
-                self.bat1_temp.setText(f"Temperature: {bat1_temp} °C")
-                self.bat1_volt.setText(f"Voltage: {bat1_volt} V")
-                self.bat1_cur.setText(f"Current: {bat1_cur} A")
-                # battery 2 values
-                self.bat2_temp.setText(f"Temperature: {bat2_temp} °C")
-                self.bat2_volt.setText(f"Voltage: {bat2_volt} V")
-                self.bat2_cur.setText(f"Current: {bat2_cur} A")
-
-
-                # battery 3 values
-                self.bat3_temp.setText(f"Temperature: {bat3_temp} °C")
-                self.bat3_volt.setText(f"Voltage: {bat3_volt} V")
-                self.bat3_cur.setText(f"Current: {bat3_cur} A")
-
-
-                # battery 4 values
-                self.bat4_temp.setText(f"Temperature: {bat4_temp} °C")
-                self.bat4_volt.setText(f"Voltage: {bat4_volt} V")
-                self.bat4_cur.setText(f"Current: {bat4_cur} A")
-
-
-                # updated LIM values
-                self.limTemp.setText(f"Temperature: {lim_temp} °C")
-                self.limVolt.setText(f"Voltage: {lim_volt} V")
-                self.limCur.setText(f"Current: {lim_cur} A")
-
-
-                # updated break positions
-                self.brake_1_pos.setText("Deployed" if brake1_deployed else "Retracted")
-                self.brake_2_pos.setText("Deployed" if brake2_deployed else "Retracted")
-
-
-                # updated velocity/position
-                self.CS_display.setText(f"{velocity} m/s")
-                self.Pos_display.setText(f"{distance_traveled} m")
-
-
-                # updated pod state
-                self.state.setText(state)
-            except Exception as e:
-                self.log_command(f"Error updating GUI with received data: {str(e)}")
-
-
-#------------------------------------------------------------------------------------------------------
-    def log_command(self, message):
-        timestamp = time.strftime("%H:%M:%S", time.localtime())
-        line = f"[{timestamp}] {message}"
-        # default to system logs; use append helpers so it autoscrolls
-        try:
-            self.append_system_log(line)
-        except Exception:
-            # fallback print if GUI not ready
-            print(line)
-
-    def append_system_log(self, message: str):
-        # Append and autoscroll to end
-        self.system_logs.appendPlainText(message)
-        cursor = self.system_logs.textCursor()
-        cursor.movePosition(QTextCursor.End)
-        self.system_logs.setTextCursor(cursor)
-
-    def append_rover_log(self, message: str):
-        self.rover_logs.appendPlainText(message)
-        cursor = self.rover_logs.textCursor()
-        cursor.movePosition(QTextCursor.End)
-        self.rover_logs.setTextCursor(cursor)
-
-    def on_launch(self):
-        self.C_LOCK.acquire()
-        with open(CMD_FILE, "w") as c:
-            c.write("GO")
-        self.C_LOCK.release()
-        self.log_command("Launch command sent")
-       
-    def on_stop(self):
-        self.C_LOCK.acquire()
-        with open(CMD_FILE, "w") as c:
-            c.write("STOP")
-        self.C_LOCK.release()
-        self.log_command("Stop command sent")
-   
-    def on_e_stop(self): # link to STOP NOW button
-        self.C_LOCK.acquire()
-        with open(CMD_FILE, "w") as c:
-            c.write("STOP_NOW")
-        self.C_LOCK.release()
-        self.log_command("E-STOP")
-   
-    def on_ready(self): # Link to ready button
-        self.C_LOCK.acquire()
-        with open(CMD_FILE, "w") as c:
-            c.write("READY")
-        self.C_LOCK.release()
-        self.log_command("Prep launch command sent")
-   
-    def on_Cancel(self): # link to abort launch button
-        self.C_LOCK.acquire()
-        with open(CMD_FILE, "w") as c:
-            c.write("ABORT")
-        self.C_LOCK.release()
-        self.log_command("Cancel launch command sent")
-   
-    def on_fault_reset(self): # link to reset fault button
-        self.C_LOCK.acquire()
-        with open(CMD_FILE, "w") as c:
-            c.write("RESET_FAULT")
-        self.C_LOCK.release()
-        self.log_command("Fault reset command sent")
-
-
-    def closeEvent(self, event):
-        super().closeEvent(event)
-
-
-
-
-def main(data_lock: threading.Lock, commands_lock: threading.Lock):
-    app = QApplication(sys.argv)
-    app.setStyle("Fusion")
-    window = HyperloopControlGUI(data_lock, commands_lock)
-    window.show()
-    # Example data to update the GUI, including inverter voltage
-    '''    example_data = [
-        25.0, 48.5, 10.2,  # Battery 1
-        26.5, 48.1, 10.0,  # Battery 2
-        27.0, 48.7, 10.5,  # Battery 3
-        25.5, 48.2, 10.1,  # Battery 4
-        60.0, 400.0, 15.0,  # LIM
-        True, False,         # Brakes
-        300.5, 1200.0,       # Speed and position
-        "Safe to Approach",  # State
-        220.0                # Inverter voltage
-    ]
-    '''
-    def update():
-        window.improveGUI()
-
-
-    timer = QTimer()
-    timer.timeout.connect(update)
-    timer.start(1000)
-
-
-    sys.exit(app.exec())
 
 
 if __name__ == "__main__":
-    main(threading.Lock(), threading.Lock())
-
-
-
-
-
-
-
-
-
-
-
+    app = QApplication(sys.argv)
+    window = HyperloopControlGUI()
+    window.show()
+    sys.exit(app.exec())
