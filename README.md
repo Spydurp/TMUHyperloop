@@ -1,6 +1,10 @@
 # TMUHyperloop
 Code repository for TMU Hyperloop GNC systems
 
+GUI Contributors:
+- Alishba Aamir @ 2024-2025/GUI/WorkingGUI.py
+- Syed Ka Ab Surkhi @2024-2025/GUI/betterGUI.py
+
 Contributors:
 - Andy Lin
 - Matthew Trieu
